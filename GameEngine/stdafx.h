@@ -11,5 +11,6 @@
 #include <SDL_image.h>
 #include <SDL_opengl.h>
 #include <SDL_ttf.h>
+#include <Box2D\Box2D.h>
 
 using namespace std;

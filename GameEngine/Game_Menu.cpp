@@ -31,6 +31,8 @@ CGame_Menu::CGame_Menu(void)
 	keyboard->AddEvent(devToolOn);
 	keyboard->AddEvent(devToolOff);
 	keyboard->AddEvent(jump);
+
+
 }
 
 CGame_Menu::~CGame_Menu(void)

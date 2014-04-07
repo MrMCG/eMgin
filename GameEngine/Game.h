@@ -25,6 +25,8 @@ public:
 	string GetFrames();
 	void RUNDebug();
 
+	void TEST();
+
 private:
 	CSDL_Setup* window;
 	CResources* resources;
@@ -37,6 +39,12 @@ private:
 	CEntity* dave;
 	CEntity* paul;
 	CEntity* score;
+
+	b2Body* body;
+
+	b2World* world;
+
+	b2Body* groundBody;
 
 	bool idle;
 	bool DEBUG;
