@@ -62,7 +62,11 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 	player->GetPhysics()->GetBody()->SetLinearDamping(2);
 	player->GetPhysics()->GetBody()->SetGravityScale(1);
 
-	testFloor->UpdateImageSize(2);
+	testFloor->GetPhysics()->EnableDebugTex(window->GetRenderer());
+	testBox->GetPhysics()->EnableDebugTex(window->GetRenderer());
+	player->GetPhysics()->EnableDebugTex(window->GetRenderer());
+
+	bullet->GetPhysics()->GetBody()->SetBullet(true);
 
 	SCORE = 0;
 
@@ -175,20 +179,35 @@ void CGame::HandleEvents()
 		{
 			DEBUG = true;		
 			player->SetDebug(true);
-			player->SetDebug(true);
+			testFloor->SetDebug(true);
+			testBox->SetDebug(true);
 		}
 
 		if(keyboard->GetKey(7)->IsEnabled()) // dev tools off
 		{
 			DEBUG = false;		
 			player->SetDebug(false);
-			player->SetDebug(false);
+			testFloor->SetDebug(false);
+			testBox->SetDebug(false);
 		}
 
 		if(keyboard->GetKey(8)->IsEnabled()) // jump
 		{
-			player->Jump();
-			idle = false;
+			int numRays = 20;
+			for (int i = 0; i < numRays; i++) 
+			{
+				  float angle = (i / (float)numRays) * 360 * (3.142/180);
+				  b2Vec2 rayDir( sinf(angle), cosf(angle) );
+				  b2Vec2 rayEnd = bullet->GetPhysics()->GetBody()->GetPosition();
+				  rayEnd += 100 * rayDir;
+				  //check what this ray hits
+				  RaysCastCallback callback;//basic callback to record body and hit point
+ 				  world->RayCast(&callback, bullet->GetPhysics()->GetBody()->GetPosition(), rayEnd);
+				  if ( callback.m_fixture ) 
+				  {
+					  CPhysics::ApplyBlastImpulse(callback.m_fixture->GetBody(), bullet->GetPhysics()->GetBody()->GetPosition(), callback.m_point, 5000);	  
+				  }
+			 }
 		}
 
 		if (keyboard->GetMouseClick())

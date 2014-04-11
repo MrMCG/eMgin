@@ -164,9 +164,10 @@ void CEntity::Draw(SDL_Renderer* pass_renderer)
 			if (debug)
 			{
 				// display collision box
-				if (physics != NULL)
+				if (physics != NULL && physics->GetDebugSprite() != NULL)
 				{
-
+					physics->UpdateDebug();
+					SDL_RenderCopyEx (pass_renderer, physics->GetDebugSprite()->GetTEX(), physics->GetDebugSprite()->GetCROP(), &physics->GetColBox(), abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
 				}
 
 				// display animation frames
@@ -179,15 +180,16 @@ void CEntity::Draw(SDL_Renderer* pass_renderer)
 				SDL_Rect pos = rect;
 				pos.y += pos.h;
 
-				SDL_RenderCopyEx (pass_renderer, sprite->GetTEX(), NULL, &pos, pos.x%360, NULL, SDL_FLIP_NONE);				
+				SDL_RenderCopy(pass_renderer, sprite->GetTEX(), NULL, &pos);				
 			}
 		} else if (sprite != NULL)
 		{
 			SDL_RenderCopyEx (pass_renderer, sprite->GetTEX(), sprite->GetCROP(), &rect, abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
-			if (debug && physics != NULL)
+			if (debug && physics != NULL && physics->GetDebugSprite() != NULL)
 			{
 				// display collision box
-				//SDL_RenderCopy(pass_renderer, collision->GetColTex()->GetTEX(), NULL,  &collision->GetColBox());
+				physics->UpdateDebug();
+				SDL_RenderCopyEx (pass_renderer, physics->GetDebugSprite()->GetTEX(), physics->GetDebugSprite()->GetCROP(), &physics->GetColBox(), abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
 			}
 		}
 	}

@@ -47,7 +47,7 @@ void CBullet::Fire(b2Body* origin, b2Vec2 destination)
 	physics->GetBody()->SetTransform(position, 0);
 	direction = (destinationCalced - origin->GetPosition());
 	direction.Normalize();
-	direction *= 250;
+	direction *= 50;
 	//direction.y *= 10;
 	physics->GetBody()->ApplyLinearImpulse(direction, physics->GetBody()->GetLocalCenter());
 	physics->GetBody()->SetAngularDamping(6);

@@ -8,7 +8,7 @@ CPhysics::CPhysics(b2World* world, int x, int y, int w, int h, bool dyn)
 {
 	//bodydef.fixedRotation = true;
 	// x y are co or for top left corner, box2d requires centre
-	bodydef.position.Set(x+(x+w)/2,y+(y+h)/2);
+	bodydef.position.Set( x+((x+w)/2), y+((y+h)/2) );
     if(dyn)
 	{
 		bodydef.type=b2_dynamicBody;
@@ -29,6 +29,7 @@ CPhysics::CPhysics(b2World* world, int x, int y, int w, int h, bool dyn)
 
 	colTex = NULL;
 	isCircle = false;
+	collisionBox = SDL_Rect();
 }
 
 CPhysics::CPhysics(b2World* world, int x, int y, int r, bool dyn)
@@ -55,6 +56,7 @@ CPhysics::CPhysics(b2World* world, int x, int y, int r, bool dyn)
 
 	colTex = NULL;
 	isCircle = true;
+	collisionBox = SDL_Rect();
 }
 
 CPhysics::~CPhysics()
@@ -86,4 +88,29 @@ void CPhysics::EnableDebugTex(SDL_Renderer* pass_renderer)
 	}
 
 	colTex = new CSprite(tex);
+	colTex->ToggleDel();
+
+	collisionBox.w = width * TILE_PIXEL_METER;
+	collisionBox.h = height * TILE_PIXEL_METER;
+	UpdateDebug();
+}
+
+void CPhysics::UpdateDebug()
+{
+	collisionBox.x = (int) ((body->GetPosition().x * TILE_PIXEL_METER) - (collisionBox.w / 2));
+	collisionBox.y = (int) -((body->GetPosition().y * TILE_PIXEL_METER) + (collisionBox.h / 2)); // involves flipping y axis
+}
+
+void CPhysics::ApplyBlastImpulse(b2Body* body, b2Vec2 blastCenter, b2Vec2 applyPoint, float blastPower)
+{
+	 b2Vec2 blastDir = applyPoint - blastCenter;
+      float distance = blastDir.Normalize();
+      //ignore bodies exactly at the blast point - blast direction is undefined
+      if ( distance == 0 )
+	  {
+          return;
+	  }
+      float invDistance = 1 / distance;
+      float impulseMag = blastPower * invDistance * invDistance;
+      body->ApplyLinearImpulse( impulseMag * blastDir, applyPoint );
 }
