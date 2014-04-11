@@ -1,4 +1,7 @@
 #include "Entity.h"
+#include "settings.h"
+
+using namespace settings;
 
 CEntity::CEntity(void)
 {
@@ -12,10 +15,12 @@ CEntity::CEntity(void)
 	sprite = NULL;
 	animate = NULL;
 	physics = NULL;
-	collision = NULL;
 
 	draw = false;
 	debug = false;
+
+
+	angle = 0;
 }
 
 CEntity::CEntity(const int x, const int y, const int w, const int h)
@@ -27,14 +32,16 @@ CEntity::CEntity(const int x, const int y, const int w, const int h)
 
 	// position is centre of rectangle
 	position = new Vector2D(0,0);
-	UpdatePosition();
+	SetPosToCentre();
 	sprite = NULL;
 	animate = NULL;
 	physics = NULL;
-	collision = NULL;
 
 	draw = false;
 	debug = false;
+
+
+	angle = 0;
 }
 
 CEntity::~CEntity(void)
@@ -43,7 +50,6 @@ CEntity::~CEntity(void)
 	delete sprite;
 	delete animate;
 	delete physics;
-	delete collision;
 }
 
 void CEntity::ADD_Sprite(CSprite* csprite)
@@ -74,15 +80,16 @@ void CEntity::ADD_Animation(CAnimate* canimate)
 	draw = true;
 }
 
-void CEntity::ADD_Physics(CPhysics* cphysics)
+void CEntity::ADD_Physics(CPhysics* cphysics, bool flag)
 {
 	physics = cphysics;
-}
 
-void CEntity::ADD_Collision(CCollision* ccollision)
-{
-	collision = ccollision;
-	collision->SetColBoxPos(*position);
+	if (flag)
+	{
+		UpdatePosition();
+
+		UpdateImageSize();
+	} 
 }
 
 void CEntity::DELETE_Animation()
@@ -103,10 +110,33 @@ void CEntity::DELETE_Physics()
 	physics = NULL;
 }
 
-void CEntity::DELETE_Collision()
+void CEntity::UpdatePosition()
 {
-	delete collision;
-	collision = NULL;
+	if (physics != NULL)
+	{
+		b2Vec2 newPosition = physics->GetBody()->GetPosition();
+		float32 angle = physics->GetBody()->GetAngle();
+
+		position->setVec(Vector2D(
+			TILE_PIXEL_METER * newPosition.x, // use TILE_PIXEL_METER to link box2D meters coor to SDL pixels
+			TILE_PIXEL_METER * (newPosition.y-(newPosition.y*2)))); // SDL y axis is opposite to Box2D
+		setAngle(angle);
+	} else
+	{
+		printf_s("ERROR:CEntity:physics - physics null for update");
+	}
+}
+
+void CEntity::UpdateImageSize(float scale)
+{
+	if (physics != NULL)
+	{
+		rect.w = (physics->GetWidth() * TILE_PIXEL_METER) * scale;
+		rect.h = (physics->GetHeight() * TILE_PIXEL_METER) * scale;
+	} else
+	{
+		printf_s("ERROR:CEntity:physics - physics null for update");
+	}
 }
 
 bool CEntity::SolveCollisions(CEntity* e[])
@@ -116,62 +146,27 @@ bool CEntity::SolveCollisions(CEntity* e[])
 	{
 		for (int j = i+1; j < size; j++)
 		{
-			e[i]->HasCollided(e[j]);
+			
 		}
 	}
 	
-
 	return false;
-}
-
-bool CEntity::HasCollided(CEntity* e)
-{
-	if (!e->GetCollision()->GetInsCol()) // outside collision
-	{
-		if ( (collision->GetX()+collision->GetW()) >= e->GetCollision()->GetX() && 
-			 (collision->GetX()+collision->GetW()) <= e->GetCollision()->GetX()+e->GetCollision()->GetW() ||
-			 (collision->GetX()) >= e->GetCollision()->GetX() && 
-			 (collision->GetX()) <= e->GetCollision()->GetX()+e->GetCollision()->GetW() )
-		{
-			if ( (collision->GetY()+collision->GetH()) >= e->GetCollision()->GetY() && 
-				 (collision->GetY()+collision->GetH()) <= e->GetCollision()->GetY()+e->GetCollision()->GetH() ||
-				 (collision->GetY()) >= e->GetCollision()->GetY() && 
-				 (collision->GetY()) <= e->GetCollision()->GetY()+e->GetCollision()->GetH() )
-			{
-				if (e->GetCollision()->GetBoundry())
-				{
-
-				}
-				return true;
-			}		
-		} 
-
-		return false;
-	} else // inside collision
-	{
-		if ( ((collision->GetX()) <= e->GetCollision()->GetX() || (collision->GetX()+collision->GetW()) >= e->GetCollision()->GetX()+e->GetCollision()->GetW()) ||
-		     ((collision->GetY()) <= e->GetCollision()->GetY() || (collision->GetY()+collision->GetH()) >= e->GetCollision()->GetY()+e->GetCollision()->GetH()) )
-		{
-			return true;		
-		}
-		return false;
-	}
 }
 
 void CEntity::Draw(SDL_Renderer* pass_renderer)
 {
 	if (draw)
 	{
-		UpdateRectPos();
+		SetRectFromPos();
 		if (animate != NULL)
 		{	
-			SDL_RenderCopy(pass_renderer, animate->GetTEX(), &animate->GetCROP(), &rect);
+			SDL_RenderCopyEx (pass_renderer, animate->GetTEX(), &animate->GetCROP(), &rect, abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
 			if (debug)
 			{
 				// display collision box
-				if (collision != NULL)
+				if (physics != NULL)
 				{
-					SDL_RenderCopy(pass_renderer, collision->GetColTex()->GetTEX(), NULL, &collision->GetColBox());
+
 				}
 
 				// display animation frames
@@ -184,18 +179,15 @@ void CEntity::Draw(SDL_Renderer* pass_renderer)
 				SDL_Rect pos = rect;
 				pos.y += pos.h;
 
-
-
-
 				SDL_RenderCopyEx (pass_renderer, sprite->GetTEX(), NULL, &pos, pos.x%360, NULL, SDL_FLIP_NONE);				
 			}
 		} else if (sprite != NULL)
 		{
-			SDL_RenderCopy(pass_renderer, sprite->GetTEX(), sprite->GetCROP(), &rect);
-			if (debug && collision != NULL)
+			SDL_RenderCopyEx (pass_renderer, sprite->GetTEX(), sprite->GetCROP(), &rect, abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
+			if (debug && physics != NULL)
 			{
 				// display collision box
-				SDL_RenderCopy(pass_renderer, collision->GetColTex()->GetTEX(), NULL,  &collision->GetColBox());
+				//SDL_RenderCopy(pass_renderer, collision->GetColTex()->GetTEX(), NULL,  &collision->GetColBox());
 			}
 		}
 	}

@@ -12,7 +12,7 @@ public:
 
 	void SetTile(int x, int y, int w, int h);
 	void SetTEX(SDL_Texture* texture);
-	void ToggleDel();
+	inline void ToggleDel(){del=!del;};
 
 	SDL_Texture* GetTEX() const;
 	SDL_Rect* GetCROP() const;

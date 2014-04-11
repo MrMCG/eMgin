@@ -57,8 +57,3 @@ SDL_Rect* CSprite::GetCROP() const
 	return crop;
 }
 
-void CSprite::ToggleDel()
-{
-	del = !del;
-}
-

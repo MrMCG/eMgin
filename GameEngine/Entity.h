@@ -5,7 +5,7 @@
 #include "Text.h"
 #include "Vector2D.h"
 #include "Physics.h"
-#include "Collision.h"
+
 
 // Every "object" in the game is an entity
 // The entity has components which define the Entity in the game
@@ -19,38 +19,35 @@ public:
 
 	// Create Entity, given position and size
 	CEntity(const int x, const int y, const int w, const int h);
-	~CEntity(void);
+	virtual ~CEntity(void);
 
 	// Add Components
 	void ADD_Sprite(CSprite* csprite);
 	void ADD_Text(CSprite* csprite);
 	void ADD_Animation(CAnimate* canimate);
-	void ADD_Physics(CPhysics* cphysics);
-	void ADD_Collision(CCollision* ccollision);
+	void ADD_Physics(CPhysics* cphysics, bool flag=true);
 
 	// Remove components
 	void DELETE_Sprite();
 	void DELETE_Animation();
 	void DELETE_Physics();
-	void DELETE_Collision();
 
 	// Draw Entity
 	void Draw(SDL_Renderer* pass_renderer);
 	bool SolveCollisions(CEntity* e[]);
-	bool HasCollided(CEntity* e);
 
-	inline void UpdateRectPos()
+	inline void SetRectFromPos()
 		{rect.x = (int) (position->getX() - (rect.w / 2));
 		 rect.y = (int) (position->getY() - (rect.h / 2));};
 
-	inline void UpdatePosition()
+	inline void SetPosToCentre()
 		{position->setX((float)(rect.x + (rect.x + rect.w))/2);
 		 position->setY((float)(rect.y + (rect.y + rect.h))/2);};
 
-	inline void SetDebug(bool set) {debug = set;};
+	void UpdatePosition();
+	void UpdateImageSize(float scale=1);
 
-	inline void MoveX(int num) {rect.x += num; UpdatePosition();};
-	inline void MoveY(int num) {rect.y += num; UpdatePosition();};
+	inline void SetDebug(bool set) {debug = set;};
 
 	// Setters
 	inline void SetX(int num){position->setX((float)num);};
@@ -58,8 +55,9 @@ public:
 	inline void SetW(int num){rect.w = num;};
 	inline void SetH(int num){rect.h = num;};
 	inline void SetAll(int x, int y, int w, int h)
-	{rect.x = x; rect.y = y; rect.w = w; rect.h = h; UpdatePosition();};
+	{rect.x = x; rect.y = y; rect.w = w; rect.h = h; SetPosToCentre();};
 	inline void SetDraw(bool boolean){draw = boolean;};
+	inline void setAngle(float rad){angle = (rad * 180) / 3.142;}
 
 	// Getters
 	inline int GetX() const {return (int)position->getX();};
@@ -72,11 +70,9 @@ public:
 	inline CSprite* GetSprite() const {return sprite;};
 	inline CAnimate* GetAnimation() const {return animate;};
 	inline CPhysics* GetPhysics() const {return physics;};
-	inline CCollision* GetCollision() const {return collision;};
-
 	inline Vector2D* GetPosition() const {return position;};
 	
-private:
+protected:
 	SDL_Rect rect;
 	bool draw;
 	bool debug;
@@ -86,6 +82,8 @@ private:
 	CSprite* sprite;
 	CAnimate* animate;
 	CPhysics* physics;
-	CCollision* collision;
+
+
+	float angle;
 };
 

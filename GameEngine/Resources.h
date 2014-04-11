@@ -9,8 +9,8 @@ public:
 	CResources(SDL_Renderer* renderer);
 	~CResources(void);
 
-	CIMG_Files* GetTexResources() const {return TEX_resources;};
-	CSND_Files* GetSoundResources() const {return SND_resources;};
+	SDL_Texture* GetTexResources(int index) const {return TEX_resources->GetTEX(index);};
+	Mix_Chunk* GetSoundResources(int index) const {return SND_resources->GetSND(index);};
 
 private:
 	CIMG_Files* TEX_resources;

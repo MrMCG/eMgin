@@ -9,7 +9,7 @@
 #include "Debug.h"
 #include "Resources.h"
 #include "Input.h"
-#include "Collision.h"
+#include "Characters.h"
 
 using namespace settings;
 
@@ -25,8 +25,6 @@ public:
 	string GetFrames();
 	void RUNDebug();
 
-	void TEST();
-
 private:
 	CSDL_Setup* window;
 	CResources* resources;
@@ -36,18 +34,19 @@ private:
 
 	CEntity* background;
 	CEntity* tiles[TILE_COLUMN][TILE_ROW];
-	CEntity* dave;
-	CEntity* paul;
+	CPlayer* player;
+	CBullet* bullet;
+	CEntity* floor;
 	CEntity* score;
 
-	b2Body* body;
+	CEntity* testFloor;
+	CEntity* testBox;
 
 	b2World* world;
 
-	b2Body* groundBody;
-
 	bool idle;
 	bool DEBUG;
+	bool fired;
 
 	bool quit;
 

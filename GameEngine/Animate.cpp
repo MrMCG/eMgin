@@ -1,10 +1,10 @@
 
 #include "Animate.h"
 
-CAnimate::CAnimate(SDL_Renderer* pass_renderer, SDL_Texture* image, SDL_Texture* errorTex)
+CAnimate::CAnimate(SDL_Renderer* pass_renderer, CResources* resources, int index)
 {
 	tex = NULL;
-	tex = image;
+	tex = resources->GetTexResources(index);
 
 	if (tex == NULL)
 	{
@@ -13,7 +13,7 @@ CAnimate::CAnimate(SDL_Renderer* pass_renderer, SDL_Texture* image, SDL_Texture*
 
 	// uses error tex
 	// dont animatte
-	if (this->tex == errorTex)
+	if (this->tex == resources->GetTexResources(0))
 	{
 		error = true;
 	} else
@@ -23,19 +23,19 @@ CAnimate::CAnimate(SDL_Renderer* pass_renderer, SDL_Texture* image, SDL_Texture*
 
 	SDL_QueryTexture(tex, NULL, NULL, &texWidth, &texHeight);
 
+	// initialising values
 	crop.x = 0;
 	crop.y = 0;
 	crop.w = texWidth;
 	crop.h = texHeight;
-	ANIM_currentFrame = 0;
-
-	ANIM_DELAY = 0;
-	ANIM_SPEED = 128;
-	IDLE_beginFrame = 0;
-	IDLE_endFrame = 2; 
+	currentFrame = 0;
+	delay = 0;
+	prevAnimType = 0;
 	
-	ANIM_ROW_SIZE = 4;
-	ANIM_COLUMN_SIZE = 4;
+	speed = 128;
+	
+	rowSize = 4;
+	columnSize = 4;
 }
 
 CAnimate::~CAnimate(void)
@@ -44,57 +44,44 @@ CAnimate::~CAnimate(void)
 	delete tex;
 }
 
-void CAnimate::Animation(int type)
-{
-	if (!error)
-	{
-		switch (type)
-		{
-		case 1:
-			PerformAnimation(0);
-			break;
-		case 2:
-			PerformAnimation(1);
-			break;
-		case 3:
-			PerformAnimation(2);
-			break;
-		case 4:
-			PerformAnimation(3);
-			break;
-		case 5:
-			PerformAnimation(4);
-			break;
-		default:
-			break;
-		}
-	} 
-}
-
 void CAnimate::PerformAnimation(int animType)
 {
-	if (ANIM_DELAY + ANIM_SPEED < SDL_GetTicks())
+	if (animType != prevAnimType)
 	{
-		if (IDLE_endFrame < ANIM_currentFrame)
+		prevAnimType = animType;
+		currentFrame = 0;
+	}
+	if (!error && delay + speed < SDL_GetTicks())
+	{
+		if (columnSize-1 <= currentFrame)
 		{
-			ANIM_currentFrame = IDLE_beginFrame;
+			currentFrame = 0;
 		} else
 		{
-			ANIM_currentFrame++;
+			currentFrame++;
 		}
 
-		crop.x = ANIM_currentFrame * (texWidth/ANIM_ROW_SIZE);
-		crop.y = animType * (texHeight/ANIM_COLUMN_SIZE);
-		crop.w = texWidth/ANIM_ROW_SIZE;
-		crop.h = texHeight/ANIM_COLUMN_SIZE;
+		crop.x = currentFrame * (texWidth/rowSize);
+		crop.y = animType * (texHeight/columnSize);
+		crop.w = texWidth/rowSize;
+		crop.h = texHeight/columnSize;
 
 		UpdateDelay();
 	}
 }
 
+void CAnimate::UseFrame(int column, int row)
+{
+	crop.x = column * (texWidth/rowSize);
+	crop.y = row * (texHeight/columnSize);
+	crop.w = texWidth/rowSize;
+	crop.h = texHeight/columnSize;
+	currentFrame = column;
+}
+
 void CAnimate::UpdateDelay()
 {
-	ANIM_DELAY = SDL_GetTicks();
+	delay = SDL_GetTicks();
 }
 
 SDL_Texture* CAnimate::GetTEX() const
@@ -109,10 +96,10 @@ SDL_Rect CAnimate::GetCROP() const
 
 int CAnimate::GetFrame() const
 {
-	return ANIM_currentFrame;
+	return currentFrame;
 }
 
 int CAnimate::GetRow() const
 {
-	return crop.y / (texHeight/ANIM_COLUMN_SIZE);
+	return crop.y / (texHeight/columnSize);
 }

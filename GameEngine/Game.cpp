@@ -13,7 +13,7 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 	debug = new CDebug(window->GetRenderer());
 
 	background = new CEntity(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	background->ADD_Sprite(new CSprite(resources->GetTexResources()->GetTEX(1)));	
+	background->ADD_Sprite(new CSprite(resources->GetTexResources(1)));	
 
 	for (int i = 0; i < TILE_COLUMN; i++)
 	{
@@ -25,29 +25,44 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 				TILE_COLUMN_CALC, 
 				TILE_ROW_CALC);
 				
-			tiles[i][j]->ADD_Sprite(new CSprite(resources->GetTexResources()->GetTEX(2)));
+			tiles[i][j]->ADD_Sprite(new CSprite(resources->GetTexResources(2)));
 		}
 	}
 
 	tiles[0][0]->SetDraw(false);
 
-	dave = new CEntity(0, 300, (int)(TILE_COLUMN_CALC*1.5), (int)(TILE_ROW_CALC*2));
-	paul = new CEntity(500, 300, (int)(TILE_COLUMN_CALC*1.5), (int)(TILE_ROW_CALC*2));
-		
-	dave->ADD_Animation( new CAnimate(window->GetRenderer(), resources->GetTexResources()->GetTEX(3), resources->GetTexResources()->GetTEX(0)));
-	paul->ADD_Sprite(new CSprite(resources->GetTexResources()->GetTEX(1)));
+	//dave = new CEntity(0, 300, (int)(TILE_COLUMN_CALC*1.5), (int)(TILE_ROW_CALC*2));
+	//paul = new CEntity(500, 300, (int)(TILE_COLUMN_CALC*1.5), (int)(TILE_ROW_CALC*2));
 
-	dave->ADD_Collision( new CCollision(window->GetRenderer()));
-	paul->ADD_Collision( new CCollision(window->GetRenderer()));
+	player = new CPlayer(0, 150, 20, 20);
+	bullet = new CBullet(100, 300, 20, 20);
+	floor = new CEntity(0, 150, 20, 20);
+	testFloor = new CEntity(0, 150, 20, 20);
+	testBox = new CEntity(0, 150, 20, 20);
 
-	dave->GetCollision()->SetColBoxSize(50,50);
-	paul->GetCollision()->SetColBoxSize(200,200);
+	CAnimate* playerAnim = new CAnimate(window->GetRenderer(), resources, 3);
+	playerAnim->SetSpriteSheet(4,4);
+	playerAnim->SetSpeed(128);
 
-	paul->GetCollision()->SetSolBoundry(true);
+	player->ADD_Animation(playerAnim);
+	bullet->ADD_Sprite(new CSprite(resources->GetTexResources(1)));
+	floor->ADD_Sprite(new CSprite(resources->GetTexResources(1)));
+	testFloor->ADD_Sprite(new CSprite(resources->GetTexResources(1)));
+	testBox->ADD_Sprite(new CSprite(resources->GetTexResources(1)));
 
-	dave->ADD_Physics( new CPhysics());
+	world = new b2World(b2Vec2(0.0,-10));
 
-	dave->GetPhysics()->SetMass(1);
+	player->ADD_Physics(new CPhysics(world, 0, -20, 2, 2));
+	floor->ADD_Physics(new CPhysics(world, 0, -25, 2, 2, false));
+	bullet->ADD_Physics(new CPhysics(world, 10, -15, 2, 2));
+	testFloor->ADD_Physics(new CPhysics(world, 20, -15, 2, 2, false));
+	testBox->ADD_Physics(new CPhysics(world, 20, -10, 2, 2));
+
+	player->GetPhysics()->SetFixedRot(true);
+	player->GetPhysics()->GetBody()->SetLinearDamping(2);
+	player->GetPhysics()->GetBody()->SetGravityScale(1);
+
+	testFloor->UpdateImageSize(2);
 
 	SCORE = 0;
 
@@ -62,93 +77,15 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 
 	idle = true;
 	DEBUG = false;
-
-
-
-	// Define the gravity vector.
-	b2Vec2 gravity(0.0f, -10.0f);
-
-	// Construct a world object, which will hold and simulate the rigid bodies.
-	b2World start(gravity);
-
-	// Define the ground body.
-	b2BodyDef groundBodyDef;
-	groundBodyDef.position.Set(0.0f, -10.0f);
-
-	// Call the body factory which allocates memory for the ground body
-	// from a pool and creates the ground box shape (also from a pool).
-	// The body is also added to the world.
-	groundBody = start.CreateBody(&groundBodyDef);
-
-	// Define the ground box shape.
-	b2PolygonShape groundBox;
-
-	// The extents are the half-widths of the box.
-	groundBox.SetAsBox(50.0f, 10.0f);
-
-	// Add the ground fixture to the ground body.
-	groundBody->CreateFixture(&groundBox, 0.0f);
-
-	// Define the dynamic body. We set its position and call the body factory.
-	b2BodyDef bodyDef;
-	bodyDef.type = b2_dynamicBody;
-	bodyDef.position.Set(0.0f, 4.0f);
-	body = start.CreateBody(&bodyDef);
-
-	// Define another box shape for our dynamic body.
-	b2PolygonShape dynamicBox;
-	dynamicBox.SetAsBox(1.0f, 1.0f);
-
-	// Define the dynamic body fixture.
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &dynamicBox;
-
-	// Set the box density to be non-zero, so it will be dynamic.
-	fixtureDef.density = 1.0f;
-
-	// Override the default friction.
-	fixtureDef.friction = 0.3f;
-
-	// Add the shape to the body.
-	body->CreateFixture(&fixtureDef);
-
-	world = &start;
-
-	//TEST();
+	fired = false;
 	
-}
-
-void CGame::TEST()
-{
-	float32 timeStep = 1.0f / 60.0f;
-	
-
-	int32 velocityIterations = 6;
-
-	int32 positionIterations = 2;
-
-
-	// This is our little game loop.
-	for (int32 i = 0; i < 60; ++i)
-	{
-		// Instruct the world to perform a single step of simulation.
-		// It is generally best to keep the time step and iterations fixed.
-		world->Step(timeStep, velocityIterations, positionIterations);
-
-		// Now print the position and angle of the body.
-		b2Vec2 position = body->GetPosition();
-		float32 angle = body->GetAngle();
-
-		printf("%4.2f %4.2f %4.2f\n", position.x, position.y, angle);
-		cout << " time: " << timeStep << endl;
-	}
 }
 
 CGame::~CGame(void)
 {	
 	
 	delete background;
-	delete dave;
+	delete player;
 	for (int i = 0; i < TILE_COLUMN; i++)
 	{
 		for (int j = 0; j < TILE_ROW; j++)
@@ -157,7 +94,13 @@ CGame::~CGame(void)
 		}
 	}
 	delete score;
+	delete world;
+	delete bullet;
+	delete floor;
 	delete debug;
+
+	delete testFloor;
+	delete testBox;
 
 	// derefrence
 	keyboard = NULL;
@@ -181,8 +124,6 @@ void CGame::GameLoop()
 
 		DrawEntities();
 
-		TEST();
-
 		window->End();	
 	}
 }
@@ -193,36 +134,35 @@ void CGame::HandleEvents()
 	{		
 		if(keyboard->GetKey(0)->IsEnabled()) // walk up
 		{
-			dave->GetPhysics()->ApplyExternalForce(Vector2D(0,-10));
-			dave->GetAnimation()->Animation(4);
+			player->MoveUp(100);
+			player->GetAnimation()->PerformAnimation(3);
 			idle = false;
 		}
 
 		if(keyboard->GetKey(1)->IsEnabled()) // walk down
 		{
-			dave->GetPhysics()->ApplyExternalForce(Vector2D(0,10));
-			dave->GetAnimation()->Animation(1);
+			player->MoveDown(100);
+			player->GetAnimation()->PerformAnimation(0);
 			idle = false;
 		}
 
 		if(keyboard->GetKey(2)->IsEnabled()) // walk left
 		{
-			dave->GetPhysics()->ApplyExternalForce(Vector2D(-10,0));
-			dave->GetAnimation()->Animation(2);
+			player->MoveLeft(100);
+			player->GetAnimation()->PerformAnimation(1);
 			idle = false;
 		}
 
 		if(keyboard->GetKey(3)->IsEnabled()) // walk right
 		{
-			dave->GetPhysics()->ApplyExternalForce(Vector2D(10,0));
-			dave->GetAnimation()->Animation(3);
+			player->MoveRight(100);
+			player->GetAnimation()->PerformAnimation(2);
 			idle = false;
 		}
 
 		if(keyboard->GetKey(4)->IsEnabled()) // exit
 		{
 			quit = true;
-			//window->GetMainEvent()->type = SDL_QUIT;
 		}
 
 		if(keyboard->GetKey(5)->IsEnabled()) // player score
@@ -231,30 +171,39 @@ void CGame::HandleEvents()
 			score->GetSprite()->Print(window->GetRenderer(), SCORE, 255, 255, 255);
 		}
 
-		if(keyboard->GetKey(6)->IsEnabled()) // dev tools
+		if(keyboard->GetKey(6)->IsEnabled()) // dev tools on
 		{
 			DEBUG = true;		
-			dave->SetDebug(true);
-			paul->SetDebug(true);
+			player->SetDebug(true);
+			player->SetDebug(true);
 		}
 
-		if(keyboard->GetKey(7)->IsEnabled()) // dev tools
+		if(keyboard->GetKey(7)->IsEnabled()) // dev tools off
 		{
 			DEBUG = false;		
-			dave->SetDebug(false);
-			paul->SetDebug(false);
+			player->SetDebug(false);
+			player->SetDebug(false);
 		}
 
 		if(keyboard->GetKey(8)->IsEnabled()) // jump
 		{
-			dave->GetPhysics()->ApplyExternalForce(Vector2D(0,-40));
+			player->Jump();
+			idle = false;
 		}
 
-		
+		if (keyboard->GetMouseClick())
+		{
+			if (!fired)
+			{
+				b2Vec2 mouse = b2Vec2(keyboard->GetMouseX(), -keyboard->GetMouseY());
+				bullet->Fire(player->GetPhysics()->GetBody(), mouse);
+				fired = true;
+			}
+		}
 
 		if (idle)
 		{
-			dave->GetAnimation()->Animation(1);
+			player->GetAnimation()->UseFrame(1,0);
 		} 
 
 		if (DEBUG)
@@ -270,26 +219,22 @@ void CGame::HandleEvents()
 }
 
 void CGame::HandlePhysics()
-{
-	float update = 0.1f;
-	dave->GetPhysics()->ApplyBackgroundForce(dave->GetPosition(), update);
+{	
+	// Update world physics
+	world->Step(1.0f/30.0f, 5, 5);
 
-	dave->GetPhysics()->UpdatePosition(dave->GetPosition(), update);
+	// Update entity Positions
 
-	dave->GetCollision()->SetColBoxPos(*dave->GetPosition());
-
-
-	//paul->GetPosition()->setVec(Vector2D(position.x, position.y));
-
-	/*
-	if(dave->HasCollided(paul))
-	{
-		SDL_SetTextureColorMod(dave->GetCollision()->GetColTex()->GetTEX(), 0,200,0);		
-	} else
-	{
-		SDL_SetTextureColorMod(dave->GetCollision()->GetColTex()->GetTEX(), 50,50,200);
-	}
-	*/
+	// player
+	player->UpdatePosition();
+	// floor
+	floor->UpdatePosition();
+	// bullet
+	bullet->UpdatePosition();
+	// testfloor
+	testFloor->UpdatePosition();
+	// testbox
+	testBox->UpdatePosition();
 }
 
 void CGame::DrawEntities()
@@ -304,9 +249,13 @@ void CGame::DrawEntities()
 		}
 	}		
 
-	paul->Draw(window->GetRenderer());
-	dave->Draw(window->GetRenderer());
+	player->Draw(window->GetRenderer());
+	floor->Draw(window->GetRenderer());
+	bullet->Draw(window->GetRenderer());
 	score->Draw(window->GetRenderer());
+
+	testFloor->Draw(window->GetRenderer());
+	testBox->Draw(window->GetRenderer());
 
 	if (DEBUG)
 	{

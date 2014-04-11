@@ -4,7 +4,7 @@
 CGame_Menu::CGame_Menu(void)
 {
 	csdl_setup = new CSDL_Setup();
-	csdl_setup->SetRenderer(1);
+	csdl_setup->SetRenderer(2);
 	resources = new CResources(csdl_setup->GetRenderer());
 	//game = new CGame(csdl_setup, resources);
 
@@ -32,7 +32,6 @@ CGame_Menu::CGame_Menu(void)
 	keyboard->AddEvent(devToolOff);
 	keyboard->AddEvent(jump);
 
-
 }
 
 CGame_Menu::~CGame_Menu(void)
@@ -44,7 +43,7 @@ CGame_Menu::~CGame_Menu(void)
 
 void CGame_Menu::Run()
 {
-	for (int k = 0; k < 20; k++)
+	for (int k = 0; k < 1; k++)
 	{
 		game = new CGame(csdl_setup, resources, keyboard);
 

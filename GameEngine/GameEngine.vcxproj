@@ -79,14 +79,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Animate.h" />
+    <ClInclude Include="Characters.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="Game_Menu.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="Input_Event.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="Input_Event.h" />
     <ClInclude Include="Keyboard_Event.h" />
+    <ClInclude Include="Level.h" />
     <ClInclude Include="Physics.h" />
-    <ClInclude Include="Collision.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="SDL_Setup.h" />
     <ClInclude Include="settings.h" />
@@ -100,6 +101,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Animate.cpp" />
+    <ClCompile Include="Characters.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="Game_Menu.cpp" />
     <ClCompile Include="Input.cpp" />
@@ -107,8 +109,8 @@
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="IMG_Files.cpp" />
     <ClCompile Include="GameEngine.cpp" />
+    <ClCompile Include="Level.cpp" />
     <ClCompile Include="Physics.cpp" />
-    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="Resources.cpp" />
     <ClCompile Include="SDL_Setup.cpp" />
     <ClCompile Include="SND_Files.cpp" />

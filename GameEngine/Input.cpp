@@ -8,6 +8,11 @@ CInput::CInput(int num)
 	keys = new CInput_Event*[size];
 	store = new Sint32[size];
 
+	mouseX = 0;
+	mouseY = 0;
+
+	mouseClick = false;
+
 	INIT_INPUT();
 
 	printf("CREATING - CInput - SUCCESS \n");
@@ -96,6 +101,17 @@ void CInput::Poll(SDL_Event* mainEvent)
 				break;
 			}
 		}
+		break;
+
+	case SDL_MOUSEBUTTONDOWN:
+		mouseClick = true;
+		break;
+	case SDL_MOUSEBUTTONUP:
+		mouseClick = false;
+		break;
+	case SDL_MOUSEMOTION:
+		mouseX = mainEvent->button.x;
+		mouseY = mainEvent->button.y;
 		break;
 	}
 

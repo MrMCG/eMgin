@@ -1,21 +1,31 @@
 #pragma once
 #include "StdAfx.h"
+#include "Resources.h"
 
 class CAnimate
 {
 public:
 	CAnimate(
 		SDL_Renderer* pass_renderer, 
-		SDL_Texture* image, 
-		SDL_Texture* errorTex);
+		CResources* resources, 
+		int index);
 
 	~CAnimate(void);
 
-	void SetALL();
-
-	void Animation(int type);
+	// type represents the animation for a row in the sprite sheet
+	// starting with 0
 	void PerformAnimation(int animType);
+
+	// display only one frame from the sprite sheet
+	// coor use top left of square
+	void UseFrame(int column, int row);
 	void UpdateDelay();
+
+	// set sprite sheet size
+	inline void SetSpriteSheet(int columns, int rows) {columnSize=columns;rowSize=rows;};
+
+	// set animation speed
+	inline void SetSpeed(int cSpeed) {speed=cSpeed;};
 
 	SDL_Texture* GetTEX() const;
 	SDL_Rect GetCROP() const;
@@ -28,14 +38,15 @@ private:
 	int texWidth;
 	int texHeight;
 	bool error;
-	int ANIM_currentFrame;
+	int currentFrame;
+	int delay;	
+	int prevAnimType;
 
-	int IDLE_beginFrame;
-	int IDLE_endFrame;
+	// how often to run the animation
+	int speed;
 
-	int ANIM_DELAY;	
-	int ANIM_SPEED;	
-	int ANIM_ROW_SIZE;
-	int ANIM_COLUMN_SIZE;
+	// size of spritesheet
+	int rowSize;
+	int columnSize;
 };
 
