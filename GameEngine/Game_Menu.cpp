@@ -43,7 +43,7 @@ CGame_Menu::~CGame_Menu(void)
 
 void CGame_Menu::Run()
 {
-	for (int k = 0; k < 1; k++)
+	for (int k = 0; k < 10; k++)
 	{
 		game = new CGame(csdl_setup, resources, keyboard);
 

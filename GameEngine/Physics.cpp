@@ -8,7 +8,7 @@ CPhysics::CPhysics(b2World* world, int x, int y, int w, int h, bool dyn)
 {
 	//bodydef.fixedRotation = true;
 	// x y are co or for top left corner, box2d requires centre
-	bodydef.position.Set( x+((x+w)/2), y+((y+h)/2) );
+	bodydef.position.Set( x+(w/2), y-(h/2) );
     if(dyn)
 	{
 		bodydef.type=b2_dynamicBody;

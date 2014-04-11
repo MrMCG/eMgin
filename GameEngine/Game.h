@@ -42,6 +42,14 @@ private:
 	CEntity* testFloor;
 	CEntity* testBox;
 
+	CPhysics* leftSide;
+	CPhysics* rightSide;
+	CPhysics* topSide;
+	CPhysics* bottomSide;
+
+	CEntity** boxes;
+	int size;
+
 	b2World* world;
 
 	bool idle;
