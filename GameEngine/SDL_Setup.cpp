@@ -75,8 +75,8 @@ void CSDL_Setup::SetRenderer(int flags)
 
 void CSDL_Setup::Begin()
 {
-	SDL_PollEvent(mainEvent);
 	SDL_RenderClear(renderer);
+	SDL_PollEvent(mainEvent);
 }
 
 void CSDL_Setup::End()

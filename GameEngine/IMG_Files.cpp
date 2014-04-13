@@ -1,4 +1,5 @@
 #include "IMG_Files.h"
+#include "stdafx.h"
 #include "settings.h"
 
 using namespace settings;

@@ -1,4 +1,3 @@
-
 #include "Animate.h"
 
 CAnimate::CAnimate(SDL_Renderer* pass_renderer, CResources* resources, int index)

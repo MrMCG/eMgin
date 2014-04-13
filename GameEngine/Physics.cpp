@@ -4,6 +4,9 @@
 
 using namespace settings;
 
+// ----------------------------------------------------------
+// ------------------------- PHYSICS ------------------------
+// ----------------------------------------------------------
 CPhysics::CPhysics(b2World* world, int x, int y, int w, int h, bool dyn)
 {
 	//bodydef.fixedRotation = true;
@@ -26,6 +29,7 @@ CPhysics::CPhysics(b2World* world, int x, int y, int w, int h, bool dyn)
     fixturedef.shape=&polygon;
     fixturedef.density=1;
     body->CreateFixture(&fixturedef);
+	body->SetUserData(this);
 
 	colTex = NULL;
 	isCircle = false;
@@ -45,12 +49,12 @@ CPhysics::CPhysics(b2World* world, int x, int y, int r, bool dyn)
 
 	circle.m_radius = r;
 
-	width = r;
-	height = r;
+	width = r*2;
+	height = r*2;
 
 	polygon = b2PolygonShape();
 
-    fixturedef.shape=&polygon;
+    fixturedef.shape=&circle;
     fixturedef.density=1;
     body->CreateFixture(&fixturedef);
 
@@ -63,6 +67,7 @@ CPhysics::~CPhysics()
 {
 	// actual deletion is done by the box2d world
 	body = NULL;
+	delete colTex;
 }
 
 void CPhysics::EnableDebugTex(SDL_Renderer* pass_renderer)
@@ -114,3 +119,38 @@ void CPhysics::ApplyBlastImpulse(b2Body* body, b2Vec2 blastCenter, b2Vec2 applyP
       float impulseMag = blastPower * invDistance * invDistance;
       body->ApplyLinearImpulse( impulseMag * blastDir, applyPoint );
 }
+
+// ----------------------------------------------------------
+// ------------------- CCOLLISIONLISTENER -------------------
+// ----------------------------------------------------------
+CCollisionListener::CCollisionListener(b2Body* body1, b2Body* body2) 
+{
+	bodyA = body1->GetUserData();
+	bodyB = body2->GetUserData();
+	collision = false;
+}
+
+void CCollisionListener::BeginContact(b2Contact* contact)
+{
+	void* firstBody = contact->GetFixtureA()->GetBody()->GetUserData();
+	void* secondBody = contact->GetFixtureB()->GetBody()->GetUserData();
+
+	if ((firstBody == bodyA && secondBody == bodyB) ||
+	    (firstBody == bodyB && secondBody == bodyA))
+	{
+		collision = true;
+	}
+}
+
+void CCollisionListener::EndContact(b2Contact* contact)
+{
+	void* firstBody = contact->GetFixtureA()->GetBody()->GetUserData();
+	void* secondBody = contact->GetFixtureB()->GetBody()->GetUserData();
+
+	if ((firstBody == bodyA && secondBody == bodyB) ||
+	    (firstBody == bodyB && secondBody == bodyA))
+	{
+		collision = false;
+	}
+}
+

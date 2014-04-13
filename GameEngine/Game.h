@@ -16,7 +16,7 @@ using namespace settings;
 class CGame
 {
 public:
-	CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedKeyboard);
+	CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedInput);
 	~CGame(void);
 	void GameLoop();
 	void HandleEvents();
@@ -28,11 +28,11 @@ public:
 private:
 	CSDL_Setup* window;
 	CResources* resources;
-	CInput* keyboard;
+	CInput* input;
 
 	CDebug* debug;
 
-	CEntity* background;
+	CBackground* background;
 	CEntity* tiles[TILE_COLUMN][TILE_ROW];
 	CPlayer* player;
 	CBullet* bullet;
@@ -47,6 +47,8 @@ private:
 	CPhysics* topSide;
 	CPhysics* bottomSide;
 
+	CCollisionListener* testListener;
+
 	CEntity** boxes;
 	int size;
 
@@ -54,7 +56,6 @@ private:
 
 	bool idle;
 	bool DEBUG;
-	bool fired;
 
 	bool quit;
 

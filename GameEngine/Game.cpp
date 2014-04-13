@@ -1,19 +1,18 @@
 #include "Game.h"
 
-CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passedKeyboard)
+CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passedInput)
 {
 	window = NULL;
 	window = kcsdl_setup;
 	resources = NULL;
 	resources = passedResources;
-	keyboard = NULL;
-	keyboard = passedKeyboard;
+	input = NULL;
+	input = passedInput;
 
 	// Init dev tools
 	debug = new CDebug(window->GetRenderer());
 
-	background = new CEntity(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	background->ADD_Sprite(new CSprite(resources->GetTexResources(1)));	
+	
 
 	for (int i = 0; i < TILE_COLUMN; i++)
 	{
@@ -25,51 +24,29 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 				TILE_COLUMN_CALC, 
 				TILE_ROW_CALC);
 				
-			tiles[i][j]->ADD_Sprite(new CSprite(resources->GetTexResources(2)));
+			tiles[i][j]->ADD_Sprite(new CSprite(resources->GetTexResources(6)));
 		}
 	}
 
 	tiles[0][0]->SetDraw(false);
 
-	//dave = new CEntity(0, 300, (int)(TILE_COLUMN_CALC*1.5), (int)(TILE_ROW_CALC*2));
-	//paul = new CEntity(500, 300, (int)(TILE_COLUMN_CALC*1.5), (int)(TILE_ROW_CALC*2));
+	world = new b2World(b2Vec2(0.0,-100));
 
-	player = new CPlayer(0, 150, 50, 50);
-	bullet = new CBullet(100, 300, 20, 20);
-	floor = new CEntity(0, 150, 20, 20);
+	player = new CPlayer(window->GetRenderer(), resources, world);
+	background = new CBackground(resources);
+	bullet = new CBullet(resources);
 
-	testFloor = new CEntity(0, 150, 20, 20);
-	testBox = new CEntity(0, 150, 20, 20);
+	floor = new CEntity();
+	testFloor = new CEntity();
+	testBox = new CEntity();
 
-	
-
-	CAnimate* playerAnim = new CAnimate(window->GetRenderer(), resources, 3);
-	playerAnim->SetSpriteSheet(4,4);
-	playerAnim->SetSpeed(128);
-
-	player->ADD_Animation(playerAnim);
-	bullet->ADD_Sprite(new CSprite(resources->GetTexResources(6)));
 	floor->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
 	testFloor->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
-	testBox->ADD_Sprite(new CSprite(resources->GetTexResources(4)));
-
-	world = new b2World(b2Vec2(0.0,-10));
-
-	player->ADD_Physics(new CPhysics(world, 0, -20, 5, 5));
-	floor->ADD_Physics(new CPhysics(world, 16, -20, 36, 4, false));
-	bullet->ADD_Physics(new CPhysics(world, 10, -15, 2, 2));
-	testFloor->ADD_Physics(new CPhysics(world, 60, -40, 36, 4, false));
+	testBox->ADD_Sprite(new CSprite(resources->GetTexResources(4)));	
+	
+	floor->ADD_Physics(new CPhysics(world, 10, -20, 8, 4, false));
+	testFloor->ADD_Physics(new CPhysics(world, 18, -20, 8, 4, false));
 	testBox->ADD_Physics(new CPhysics(world, 20, -10, 2, 2));
-
-	player->GetPhysics()->SetFixedRot(true);
-	player->GetPhysics()->GetBody()->SetLinearDamping(2);
-	player->GetPhysics()->GetBody()->SetGravityScale(5);
-
-	testFloor->GetPhysics()->EnableDebugTex(window->GetRenderer());
-	testBox->GetPhysics()->EnableDebugTex(window->GetRenderer());
-	player->GetPhysics()->EnableDebugTex(window->GetRenderer());
-
-	bullet->GetPhysics()->GetBody()->SetBullet(true);
 
 	// create world border
 	topSide = new CPhysics(world, 0, 2, 128, 2, false);
@@ -78,14 +55,14 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 	bottomSide = new CPhysics(world, 0, -72, 128, 2, false);
 
 	// randomly create boxes
-	size = 150;
+	size = 4;
 	int posX;
 	int posY;
 	int radius;
 	boxes = new CEntity*[size];
 	for (int k = 0; k < size; k ++)
 	{
-		radius = (int) (rand() % 5) + 2;
+		radius = 4;//(int) (rand() % 5) + 2;
 		posX = (int) (rand() % 123) + 1;
 		posY = (int) (rand() % 30) + 1;
 		boxes[k] = new CEntity(0, 150, radius*TILE_PIXEL_METER, radius*TILE_PIXEL_METER);
@@ -106,9 +83,10 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 	inputTime = 0;
 
 	idle = true;
-	DEBUG = false;
-	fired = false;
-	
+	DEBUG = false;	
+
+	testListener = new CCollisionListener(player->GetPhysics()->GetBody(), testBox->GetPhysics()->GetBody());
+	world->SetContactListener(testListener);
 }
 
 CGame::~CGame(void)
@@ -145,7 +123,7 @@ CGame::~CGame(void)
 	delete boxes;
 
 	// derefrence
-	keyboard = NULL;
+	input = NULL;
 	window = NULL;
 	resources = NULL;
 }
@@ -160,13 +138,13 @@ void CGame::GameLoop()
 
 		window->Begin();	
 
-		keyboard->Poll(window->GetMainEvent());
+		input->Poll(window->GetMainEvent());
 
 		HandleEvents();
 
 		DrawEntities();
 
-		window->End();	
+		window->End();
 	}
 }
 
@@ -174,83 +152,93 @@ void CGame::HandleEvents()
 {
 	if (inputTime+INPUT_DELAY < timeCurrent)
 	{		
-		if(keyboard->GetKey(0)->IsEnabled()) // walk up - w
+		if(input->GetKey(0)->IsEnabled()) // walk up - w
 		{
 			player->MoveUp(2000);
 			player->GetAnimation()->PerformAnimation(3);
 			idle = false;
 		}
 
-		if(keyboard->GetKey(1)->IsEnabled()) // walk down - s
+		if(input->GetKey(1)->IsEnabled()) // walk down - s
 		{
-			//player->MoveDown(2000);
-			//player->GetAnimation()->PerformAnimation(0);
-			//idle = false;
+			player->MoveDown(2000);
+			player->GetAnimation()->PerformAnimation(0);
+			idle = false;
 		}
 
-		if(keyboard->GetKey(2)->IsEnabled()) // walk left - a
-		{
+		if(input->GetKey(2)->IsEnabled()) // walk left - a
+		{	
 			player->MoveLeft(2000);
+			
 			player->GetAnimation()->PerformAnimation(1);
 			idle = false;
 		}
 
-		if(keyboard->GetKey(3)->IsEnabled()) // walk right - d
+		if(input->GetKey(3)->IsEnabled()) // walk right - d
 		{
 			player->MoveRight(2000);
+
 			player->GetAnimation()->PerformAnimation(2);
 			idle = false;
 		}
 
-		if(keyboard->GetKey(4)->IsEnabled()) // exit - esc
+		if(input->GetKey(4)->IsEnabled()) // exit - esc
+		{
+			window->GetMainEvent()->type = SDL_QUIT; 		
+		}
+
+		if(input->GetKey(5)->IsEnabled()) // reset - r
 		{
 			quit = true;
-		}
-
-		if(keyboard->GetKey(5)->IsEnabled()) // player score - h
-		{
+			/*
 			SCORE += 5;
 			score->GetSprite()->Print(window->GetRenderer(), SCORE, 255, 255, 255);
+			*/
 		}
 
-		if(keyboard->GetKey(6)->IsEnabled()) // dev tools on - '
+		if(input->GetKey(6)->IsEnabled()) // dev tools on - '
 		{
 			DEBUG = true;		
 			player->SetDebug(true);
 			testFloor->SetDebug(true);
 			testBox->SetDebug(true);
+
+			for (int k = 0; k < size; k ++)
+			{
+				boxes[k]->SetDebug(true);
+			}
 		}
 
-		if(keyboard->GetKey(7)->IsEnabled()) // dev tools off - ;
+		if(input->GetKey(7)->IsEnabled()) // dev tools off - ;
 		{
 			DEBUG = false;		
 			player->SetDebug(false);
 			testFloor->SetDebug(false);
 			testBox->SetDebug(false);
-		}
 
-		if(keyboard->GetKey(8)->IsEnabled()) // explode - space
-		{
-			if (fired)
+			for (int k = 0; k < size; k ++)
 			{
-				bullet->Explode(world, 500, 1000000);
-				fired = false;
+				boxes[k]->SetDebug(false);
 			}
 		}
 
-		if (keyboard->GetMouseClick())
+		if(input->GetKey(8)->IsEnabled()) // explode - space
 		{
-			if (!fired)
+			
+		}
+		
+		if (input->GetMouseClick()) // mouse click
+		{
+			if (!bullet->IsActive())
 			{
-				b2Vec2 mouse = b2Vec2(keyboard->GetMouseX(), -keyboard->GetMouseY());
-				bullet->Fire(player->GetPhysics()->GetBody(), mouse);
-				fired = true;
+				b2Vec2 mouse = b2Vec2(input->GetMouseX(), -input->GetMouseY());
+				bullet->Fire(world, player, mouse);
 			}
 		}
 
 		if (idle)
 		{
-			player->GetAnimation()->UseFrame(1,0);
+			player->GetAnimation()->UseFrame(1,0);		
 		} 
 
 		if (DEBUG)
@@ -283,7 +271,7 @@ void CGame::HandlePhysics()
 	// floor
 	floor->UpdatePosition();
 	// bullet
-	if (fired)
+	if (bullet->IsActive())
 	{
 		bullet->UpdatePosition();
 	}
@@ -291,28 +279,44 @@ void CGame::HandlePhysics()
 	testFloor->UpdatePosition();
 	// testbox
 	testBox->UpdatePosition();
+
+	if (bullet->CollidesWith(testBox))
+	{
+		if (bullet->IsActive())
+		{
+			bullet->Explode(world, 50, 10000);
+		}
+	}
+
+	if (testListener->HasCollided())
+	{
+		cout << " collision " << endl;
+	}
 }
 
 void CGame::DrawEntities()
 {
 	background->Draw(window->GetRenderer());	
 
-	for (int i = 0; i < TILE_COLUMN; i++)
+	if (DEBUG)
 	{
-		for (int j = 0; j < TILE_ROW; j++)
+		for (int i = 0; i < TILE_COLUMN; i++)
 		{
-			tiles[i][j]->Draw(window->GetRenderer());
-		}
-	}		
+			for (int j = 0; j < TILE_ROW; j++)
+			{
+				tiles[i][j]->Draw(window->GetRenderer());
+			}
+		}		
+	}
 
 	for (int k = 0; k < size; k ++)
 	{
 		boxes[k]->Draw(window->GetRenderer());
 	}
 
-	player->Draw(window->GetRenderer());
+	
 	floor->Draw(window->GetRenderer());
-	if (fired)
+	if (bullet->IsActive())
 	{
 		bullet->Draw(window->GetRenderer());
 	}
@@ -320,6 +324,7 @@ void CGame::DrawEntities()
 
 	testFloor->Draw(window->GetRenderer());
 	testBox->Draw(window->GetRenderer());
+	player->Draw(window->GetRenderer());
 
 	if (DEBUG)
 	{
@@ -330,9 +335,9 @@ void CGame::DrawEntities()
 string CGame::GetFrames()
 {
 	float num = timeCurrent - timePrevious;
-	if (num < 10)
+	if (num < 5)
 	{
-		return "Frames: 100+";
+		return "Frames: 200+";
 	} else
 	{
 		return "Frames: ~"+to_string((long long)(1000 / num));

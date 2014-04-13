@@ -13,7 +13,7 @@ class CPhysics
 public:
 	// x y coor are form top left of square
 	CPhysics(b2World* world, int x, int y, int w, int h, bool dyn=true);
-	CPhysics(b2World* world, int r, int w, int h, bool dyn=true);
+	CPhysics(b2World* world, int x, int y, int r, bool dyn=true);
 	~CPhysics();
 
 	inline b2Body* GetBody() {return body;};
@@ -68,4 +68,20 @@ public:
     b2Vec2 m_normal;    
     float32 m_fraction;
  
+};
+
+class CCollisionListener : public b2ContactListener
+{
+public:
+	CCollisionListener(b2Body* body1, b2Body* body2);
+
+	void BeginContact(b2Contact* contact);
+	void EndContact(b2Contact* contact);
+
+	inline bool HasCollided() const {return collision;};
+
+private:
+	void* bodyA;
+	void* bodyB;
+	bool collision;
 };

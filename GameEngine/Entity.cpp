@@ -1,4 +1,5 @@
 #include "Entity.h"
+#include "stdafx.h"
 #include "settings.h"
 
 using namespace settings;
@@ -110,21 +111,66 @@ void CEntity::DELETE_Physics()
 	physics = NULL;
 }
 
+bool CEntity::CollidesWith(CEntity* entity)
+{
+	if (physics != NULL)
+	{
+		for (b2ContactEdge* edge = physics->GetBody()->GetContactList(); edge; edge = edge->next)
+		{
+			if (edge->contact->IsTouching())
+			{
+				b2Body* bodyA = edge->contact->GetFixtureA()->GetBody();
+				b2Body* bodyB = edge->contact->GetFixtureB()->GetBody();
+
+				if ( (bodyA == physics->GetBody() && bodyB == entity->GetPhysics()->GetBody()) ||
+					 (bodyB == physics->GetBody() && bodyA == entity->GetPhysics()->GetBody()))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 void CEntity::UpdatePosition()
 {
 	if (physics != NULL)
 	{
 		b2Vec2 newPosition = physics->GetBody()->GetPosition();
 		float32 angle = physics->GetBody()->GetAngle();
-
-		position->setVec(Vector2D(
-			TILE_PIXEL_METER * newPosition.x, // use TILE_PIXEL_METER to link box2D meters coor to SDL pixels
-			TILE_PIXEL_METER * (newPosition.y-(newPosition.y*2)))); // SDL y axis is opposite to Box2D
+		float x = TILE_PIXEL_METER * newPosition.x; // use TILE_PIXEL_METER to link box2D meters coor to SDL pixels
+		float y = TILE_PIXEL_METER * (newPosition.y-(newPosition.y*2)); // SDL y axis is opposite to Box2D
+		float test = TILE_PIXEL_METER * abs(newPosition.y);
+		position->setVec(Vector2D(x,y));
+				
 		setAngle(angle);
 	} else
 	{
 		printf_s("ERROR:CEntity:physics - physics null for update");
 	}
+}
+
+void CEntity::SetRectFromPos()
+{
+	int X = (int)	position->getX();
+	float decimalX = position->getX() - X;
+	
+	int Y = (int)	position->getY();
+	float decimalY = position->getY() - Y;
+
+	if (decimalX >= 0.5)
+	{
+		X++;
+	}
+	if (decimalY >= 0.5)
+	{
+		Y++;
+	}
+
+	rect.x = X - (rect.w / 2);
+	rect.y = Y - (rect.h / 2);
 }
 
 void CEntity::UpdateImageSize(float scale)

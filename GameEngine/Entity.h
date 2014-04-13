@@ -36,10 +36,13 @@ public:
 	void Draw(SDL_Renderer* pass_renderer);
 	bool SolveCollisions(CEntity* e[]);
 
-	inline void SetRectFromPos()
-		{rect.x = (int) (position->getX() - (rect.w / 2));
-		 rect.y = (int) (position->getY() - (rect.h / 2));};
-
+	//   -----  NOTE  -----
+	// this is quite inefficinet
+	// event listner should be used
+	// listener can be found in Physics.h
+	bool CollidesWith(CEntity* entity);
+	void SetRectFromPos();
+		
 	inline void SetPosToCentre()
 		{position->setX((float)(rect.x + (rect.x + rect.w))/2);
 		 position->setY((float)(rect.y + (rect.y + rect.h))/2);};

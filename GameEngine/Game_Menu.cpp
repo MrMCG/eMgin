@@ -6,7 +6,6 @@ CGame_Menu::CGame_Menu(void)
 	csdl_setup = new CSDL_Setup();
 	csdl_setup->SetRenderer(2);
 	resources = new CResources(csdl_setup->GetRenderer());
-	//game = new CGame(csdl_setup, resources);
 
 	keyboard = NULL;
 	keyboard = new CInput(10);
@@ -16,7 +15,7 @@ CGame_Menu::CGame_Menu(void)
 	walkLeft = new CKeyboard_Event(SDLK_a);
 	walkRight = new CKeyboard_Event(SDLK_d);
 	exit = new CKeyboard_Event(SDLK_ESCAPE);
-	playerScore = new CKeyboard_Event(SDLK_h);
+	reset = new CKeyboard_Event(SDLK_r);
 	devToolOn = new CKeyboard_Event(SDLK_QUOTE);
 
 	CInput_Event* devToolOff = new CKeyboard_Event(SDLK_SEMICOLON);
@@ -27,7 +26,7 @@ CGame_Menu::CGame_Menu(void)
 	keyboard->AddEvent(walkLeft);
 	keyboard->AddEvent(walkRight);
 	keyboard->AddEvent(exit);
-	keyboard->AddEvent(playerScore);
+	keyboard->AddEvent(reset);
 	keyboard->AddEvent(devToolOn);
 	keyboard->AddEvent(devToolOff);
 	keyboard->AddEvent(jump);
@@ -43,7 +42,7 @@ CGame_Menu::~CGame_Menu(void)
 
 void CGame_Menu::Run()
 {
-	for (int k = 0; k < 10; k++)
+	while (csdl_setup->GetMainEvent()->type != SDL_QUIT)
 	{
 		game = new CGame(csdl_setup, resources, keyboard);
 

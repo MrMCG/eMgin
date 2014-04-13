@@ -14,6 +14,8 @@ public:
 
 	void Run();
 
+	int screenWidth;
+
 private:
 	CSDL_Setup* csdl_setup;
 	CGame* game;
@@ -26,6 +28,6 @@ private:
 	CInput_Event* walkRight;
 	CInput_Event* exit;
 	CInput_Event* devToolOn;
-	CInput_Event* playerScore;
+	CInput_Event* reset;
 };
 
