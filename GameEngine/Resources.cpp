@@ -12,11 +12,11 @@ CResources::CResources(SDL_Renderer* renderer)
 {
 	TEX_resources = new CIMG_Files(renderer, 6);
 	
-	TEX_resources->AddTEX(renderer, "player.png");
-	TEX_resources->AddTEX(renderer, "landscape.bmp");
-	TEX_resources->AddTEX(renderer, "bullet.png");
-	TEX_resources->AddTEX(renderer, "metalCrate.png");
-	TEX_resources->AddTEX(renderer, "sheetMetal.png");
+	TEX_resources->AddTEX(renderer, "player.png"); // 1 = player sprite
+	TEX_resources->AddTEX(renderer, "landscape.bmp"); // 2 = background
+	TEX_resources->AddTEX(renderer, "bullet.png"); // 3 = bullet tex
+	TEX_resources->AddTEX(renderer, "metalCrate.png"); // 4 = crate Tex
+	TEX_resources->AddTEX(renderer, "sheetMetal.png"); 
 	TEX_resources->AddTEX(renderer, "sprite.png");
 	
 

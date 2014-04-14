@@ -58,9 +58,9 @@ void CSDL_Setup::SetRenderer(int flags)
 
 	switch (flags)
 	{
-	case 1: renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	case 0: renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 		break;
-	case 2: renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	case 1: renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 		break;
 	default: renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 		break;

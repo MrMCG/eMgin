@@ -1,58 +1,98 @@
 #include "Game.h"
 
-CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passedInput)
+CGame::CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedInput)
 {
 	window = NULL;
-	window = kcsdl_setup;
+	window = csdl_setup;
 	resources = NULL;
 	resources = passedResources;
 	input = NULL;
 	input = passedInput;
 
-	// Init dev tools
-	debug = new CDebug(window->GetRenderer());
-
+	
 	
 
+	ifstream file(LEVEL_LOCATION+"map.txt");
+	size_t pos = 0;
+	string line;
+	string current;
+	while (getline(file, line))
+	{
+		if (line.substr(0,1) == "[")
+		{
+			string area = line.substr(1, line.length()-2);
+			if (area == "background")
+			{
+				cout << "BG" << endl;
+			} else if (area == "test")
+			{
+				cout << "tt" << endl;
+			} else
+			{
+				cout << "could not read" << endl;
+			}
+		} else
+		{
+			
+			while((pos = line.find(",")) != string::npos)
+			{
+				current = line.substr(0, pos);
+				cout << current << endl;
+				line.erase(0, pos+1);
+			}
+		}
+	}
+
+	// Init dev tools
+	debug = new CDebug(window->GetRenderer());
+	
+	// create world
+	world = new b2World(b2Vec2(0.0,-100));
+
+	// create world border
+	screenBoundry = new CBoundry(resources, world);
+
+	// create background
+	background = new CBackground(resources);
+
+	// create tiles
 	for (int i = 0; i < TILE_COLUMN; i++)
 	{
 		for (int j = 0; j < TILE_ROW; j++)
 		{
-			tiles[i][j] = new CEntity(
-				(TILE_COLUMN_CALC*i), 
-				(TILE_ROW_CALC*j), 
-				TILE_COLUMN_CALC, 
-				TILE_ROW_CALC);
-				
-			tiles[i][j]->ADD_Sprite(new CSprite(resources->GetTexResources(6)));
+			tiles[i][j] = new CTile(resources, TILE_COLUMN_CALC*i, TILE_ROW_CALC*j);
 		}
 	}
+	tiles[0][0]->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
 
-	tiles[0][0]->SetDraw(false);
-
-	world = new b2World(b2Vec2(0.0,-100));
-
+	// create player
 	player = new CPlayer(window->GetRenderer(), resources, world);
-	background = new CBackground(resources);
+	
+	// create re-usable bullet
 	bullet = new CBullet(resources);
+
+	// create crates
+	testBox = new CCrate(resources, world, 20, -10, 2, 2);
+
+	// create score
+	SCORE = 0;
+	score = new CWriting(SCREEN_WIDTH/2-40, 0, 80,45);
+	score->SetColor(255,255,255);
+	score->Print(window->GetRenderer(), SCORE);
+
+
 
 	floor = new CEntity();
 	testFloor = new CEntity();
-	testBox = new CEntity();
-
+	
 	floor->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
 	testFloor->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
 	testBox->ADD_Sprite(new CSprite(resources->GetTexResources(4)));	
 	
 	floor->ADD_Physics(new CPhysics(world, 10, -20, 8, 4, false));
 	testFloor->ADD_Physics(new CPhysics(world, 18, -20, 8, 4, false));
-	testBox->ADD_Physics(new CPhysics(world, 20, -10, 2, 2));
-
-	// create world border
-	topSide = new CPhysics(world, 0, 2, 128, 2, false);
-	rightSide = new CPhysics(world, 128, 0, 2, 72, false);
-	leftSide = new CPhysics(world, -2, 0, 2, 72, false);
-	bottomSide = new CPhysics(world, 0, -72, 128, 2, false);
+	
+	
 
 	// randomly create boxes
 	size = 4;
@@ -71,13 +111,8 @@ CGame::CGame(CSDL_Setup* kcsdl_setup, CResources* passedResources, CInput* passe
 	}
 
 
-	SCORE = 0;
-
-	score = new CEntity(SCREEN_WIDTH/2-40, 0, 80,45);
-	score->ADD_Text(new CText());
-
-	score->GetSprite()->Print(window->GetRenderer(), SCORE, 255, 255, 255);
-
+	
+	// init game variables
 	timeCurrent = 1;
 	timePrevious = 1;
 	inputTime = 0;
@@ -110,10 +145,7 @@ CGame::~CGame(void)
 	delete testFloor;
 	delete testBox;
 
-	delete leftSide;
-	delete rightSide;
-	delete topSide;
-	delete bottomSide;
+	delete screenBoundry;
 
 	for (int k = 0; k < size; k ++)
 	{
@@ -156,30 +188,28 @@ void CGame::HandleEvents()
 		{
 			player->MoveUp(2000);
 			player->GetAnimation()->PerformAnimation(3);
-			idle = false;
+			player->SetIdle(false);
 		}
 
 		if(input->GetKey(1)->IsEnabled()) // walk down - s
 		{
 			player->MoveDown(2000);
 			player->GetAnimation()->PerformAnimation(0);
-			idle = false;
+			player->SetIdle(false);
 		}
 
 		if(input->GetKey(2)->IsEnabled()) // walk left - a
 		{	
-			player->MoveLeft(2000);
-			
+			player->MoveLeft(2000);		
 			player->GetAnimation()->PerformAnimation(1);
-			idle = false;
+			player->SetIdle(false);
 		}
 
 		if(input->GetKey(3)->IsEnabled()) // walk right - d
 		{
 			player->MoveRight(2000);
-
 			player->GetAnimation()->PerformAnimation(2);
-			idle = false;
+			player->SetIdle(false);
 		}
 
 		if(input->GetKey(4)->IsEnabled()) // exit - esc
@@ -190,10 +220,6 @@ void CGame::HandleEvents()
 		if(input->GetKey(5)->IsEnabled()) // reset - r
 		{
 			quit = true;
-			/*
-			SCORE += 5;
-			score->GetSprite()->Print(window->GetRenderer(), SCORE, 255, 255, 255);
-			*/
 		}
 
 		if(input->GetKey(6)->IsEnabled()) // dev tools on - '
@@ -207,6 +233,9 @@ void CGame::HandleEvents()
 			{
 				boxes[k]->SetDebug(true);
 			}
+
+			SCORE += 5;
+			score->Print(window->GetRenderer(), SCORE);
 		}
 
 		if(input->GetKey(7)->IsEnabled()) // dev tools off - ;
@@ -236,7 +265,7 @@ void CGame::HandleEvents()
 			}
 		}
 
-		if (idle)
+		if (player->GetIdle())
 		{
 			player->GetAnimation()->UseFrame(1,0);		
 		} 
@@ -249,7 +278,7 @@ void CGame::HandleEvents()
 		HandlePhysics();
 
 		inputTime = timeCurrent;
-		idle = true;
+		player->SetIdle(true);
 	}
 }
 
@@ -298,22 +327,25 @@ void CGame::DrawEntities()
 {
 	background->Draw(window->GetRenderer());	
 
-	if (DEBUG)
+	for (int i = 0; i < TILE_COLUMN; i++)
 	{
-		for (int i = 0; i < TILE_COLUMN; i++)
+		for (int j = 0; j < TILE_ROW; j++)
 		{
-			for (int j = 0; j < TILE_ROW; j++)
+			tiles[i][j]->Draw(window->GetRenderer());
+			if (DEBUG)
 			{
-				tiles[i][j]->Draw(window->GetRenderer());
+				tiles[i][j]->DrawDebug(window->GetRenderer());
 			}
-		}		
-	}
+		}
+	}		
+	
 
 	for (int k = 0; k < size; k ++)
 	{
 		boxes[k]->Draw(window->GetRenderer());
 	}
 
+	screenBoundry->Draw(window->GetRenderer());
 	
 	floor->Draw(window->GetRenderer());
 	if (bullet->IsActive())

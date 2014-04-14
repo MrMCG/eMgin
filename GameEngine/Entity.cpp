@@ -55,12 +55,14 @@ CEntity::~CEntity(void)
 
 void CEntity::ADD_Sprite(CSprite* csprite)
 {
+	DELETE_Sprite();
 	sprite = csprite;
 	draw = true;
 }
 
 void CEntity::ADD_Text(CSprite* csprite)
 {
+	DELETE_Sprite();
 	sprite = csprite;
 	draw = true;
 	sprite->ToggleDel();
@@ -68,6 +70,7 @@ void CEntity::ADD_Text(CSprite* csprite)
 
 void CEntity::ADD_Animation(CAnimate* canimate)
 {
+	DELETE_Animation();
 	animate = canimate;
 
 	if (sprite != NULL)
@@ -83,6 +86,7 @@ void CEntity::ADD_Animation(CAnimate* canimate)
 
 void CEntity::ADD_Physics(CPhysics* cphysics, bool flag)
 {
+	DELETE_Physics();
 	physics = cphysics;
 
 	if (flag)
@@ -221,7 +225,7 @@ void CEntity::Draw(SDL_Renderer* pass_renderer)
 				message += " ";
 				message += to_string((long long)animate->GetFrame());
 
-				sprite->Print(pass_renderer, message, 0,0,0);
+				sprite->Print(pass_renderer, message);
 
 				SDL_Rect pos = rect;
 				pos.y += pos.h;

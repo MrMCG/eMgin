@@ -4,7 +4,7 @@
 CGame_Menu::CGame_Menu(void)
 {
 	csdl_setup = new CSDL_Setup();
-	csdl_setup->SetRenderer(2);
+	csdl_setup->SetRenderer(1);
 	resources = new CResources(csdl_setup->GetRenderer());
 
 	keyboard = NULL;
@@ -30,6 +30,8 @@ CGame_Menu::CGame_Menu(void)
 	keyboard->AddEvent(devToolOn);
 	keyboard->AddEvent(devToolOff);
 	keyboard->AddEvent(jump);
+
+	
 
 }
 

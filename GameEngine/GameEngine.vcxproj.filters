@@ -63,9 +63,6 @@
     <ClInclude Include="Physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Level.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Characters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -123,9 +120,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Physics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Level.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Characters.cpp">

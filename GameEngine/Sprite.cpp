@@ -44,6 +44,11 @@ CSprite::~CSprite(void)
 
 void CSprite::SetTEX(SDL_Texture* texture)
 {
+	if (del)
+	{
+		SDL_DestroyTexture(tex);
+	} 
+
 	tex = texture;
 }
 

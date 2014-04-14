@@ -33,19 +33,16 @@ private:
 	CDebug* debug;
 
 	CBackground* background;
-	CEntity* tiles[TILE_COLUMN][TILE_ROW];
+	CTile* tiles[TILE_COLUMN][TILE_ROW];
 	CPlayer* player;
 	CBullet* bullet;
 	CEntity* floor;
-	CEntity* score;
+	CWriting* score;
 
 	CEntity* testFloor;
-	CEntity* testBox;
+	CCrate* testBox;
 
-	CPhysics* leftSide;
-	CPhysics* rightSide;
-	CPhysics* topSide;
-	CPhysics* bottomSide;
+	CBoundry* screenBoundry;
 
 	CCollisionListener* testListener;
 

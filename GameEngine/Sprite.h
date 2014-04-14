@@ -17,8 +17,11 @@ public:
 	SDL_Texture* GetTEX() const;
 	SDL_Rect* GetCROP() const;
 
-	virtual void Print(SDL_Renderer* rend, string mssage, int r, int g, int b) {};
-	virtual void Print(SDL_Renderer* rend, int number, int r, int g, int b) {};
+	// used for CText
+	virtual void Print(SDL_Renderer* rend, string mssage) {};
+	virtual void Print(SDL_Renderer* rend, int number) {};
+	virtual void SetColor(int r, int g, int b) {};
+	virtual void SetOpacity(int a) {};
 
 protected:
 	SDL_Texture* tex;

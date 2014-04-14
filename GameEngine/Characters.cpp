@@ -22,14 +22,7 @@ CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* wo
 	physics->GetBody()->SetLinearDamping(2);
 	physics->GetBody()->SetGravityScale(0);
 
-	facing = 3;
-	// 1 = looking up
-	// 2 = looking down
-	// 3 = looking left
-	// 4 = looking right
-
-	falling = false;
-	jumping=false;
+	InitVar();
 }
 
 CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* world, const int x, const int y, const int w, const int h) : CEntity(x,y,w,h)
@@ -48,14 +41,19 @@ CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* wo
 	physics->GetBody()->SetLinearDamping(2);
 	physics->GetBody()->SetGravityScale(0);
 
+	InitVar();
+}
+
+void CPlayer::InitVar()
+{
+	idle=true;
+	falling = false;
+	jumping=false;
 	facing = 3;
 	// 1 = looking up
 	// 2 = looking down
 	// 3 = looking left
-	// 4 = looking right
-
-	falling = false;
-	jumping=false;
+	// 4 = looking right	
 }
 
 void CPlayer::MoveLeft(int force)
@@ -123,8 +121,7 @@ CBullet::CBullet(CResources* resources) : CEntity(0,0,20,20)
 	// Set Texture
 	ADD_Sprite(new CSprite(resources->GetTexResources(3)));
 
-	rayNumber = 32;
-	amountActive = 0;
+	InitVar();
 }
 
 CBullet::CBullet(CResources* resources, const int x, const int y, const int w, const int h) : CEntity(x,y,w,h)
@@ -132,6 +129,11 @@ CBullet::CBullet(CResources* resources, const int x, const int y, const int w, c
 	// Set Texture
 	ADD_Sprite(new CSprite(resources->GetTexResources(3)));
 
+	InitVar();
+}
+
+void CBullet::InitVar()
+{
 	rayNumber = 32;
 	amountActive = 0;
 }
@@ -251,3 +253,100 @@ CBackground::CBackground(CResources* resources, const int x, const int y, const 
 	// Set Texture
 	ADD_Sprite(new CSprite(resources->GetTexResources(2)));	
 }
+
+// ----------------------------------------------------------
+// -------------------------- TILE --------------------------
+// ----------------------------------------------------------
+CTile::CTile(CResources* resources) : CEntity(0,0,TILE_COLUMN_CALC,TILE_ROW_CALC)
+{
+	// Set Texture
+	debug = new CSprite(resources->GetTexResources(6));
+}
+
+CTile::CTile(CResources* resources, const int x, const int y) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
+{
+	// Set Texture
+	debug = new CSprite(resources->GetTexResources(6));
+}
+
+CTile::CTile(CResources* resources, const int x, const int y, const int index) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
+{
+	// Set Texture
+	ADD_Sprite(new CSprite(resources->GetTexResources(index)));
+	debug = new CSprite(resources->GetTexResources(6));
+}
+
+void CTile::DrawDebug(SDL_Renderer* pass_renderer)
+{
+	SDL_RenderCopy (pass_renderer, debug->GetTEX(), debug->GetCROP(), &rect);
+}
+
+// ----------------------------------------------------------
+// ------------------------- BOUNDRY ------------------------
+// ----------------------------------------------------------
+CBoundry::CBoundry() : CEntity()
+{
+	topSide = new CEntity();
+	bottomSide = new CEntity();
+	leftSide = new CEntity();
+	rightSide = new CEntity();
+}
+
+CBoundry::CBoundry(CResources* resources, b2World* world) : CEntity()
+{
+	topSide = new CEntity();
+	bottomSide = new CEntity();
+	leftSide = new CEntity();
+	rightSide = new CEntity();
+
+	topSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
+	bottomSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
+	leftSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
+	rightSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
+
+	topSide->ADD_Physics(new CPhysics(world, 0, 2, TILE_COLUMN*TILE_SCALE, 2, false));
+	rightSide->ADD_Physics(new CPhysics(world, TILE_COLUMN*TILE_SCALE, 0, 2, 72, false));
+	leftSide->ADD_Physics(new CPhysics(world, -2, 0, 2, TILE_ROW*TILE_SCALE, false));
+	bottomSide->ADD_Physics(new CPhysics(world, 0, -TILE_ROW*TILE_SCALE, TILE_COLUMN*TILE_SCALE, 2, false));
+
+	topSide->UpdatePosition();
+	bottomSide->UpdatePosition();
+	leftSide->UpdatePosition();
+	rightSide->UpdatePosition();
+}
+
+void CBoundry::Draw(SDL_Renderer* pass_renderer)
+{
+	leftSide->Draw(pass_renderer);
+	rightSide->Draw(pass_renderer);
+	bottomSide->Draw(pass_renderer);
+	topSide->Draw(pass_renderer);	
+}
+
+// ----------------------------------------------------------
+// ------------------------- WRITING ------------------------
+// ----------------------------------------------------------
+CWriting::CWriting() : CEntity()
+{
+	ADD_Text(new CText());
+	backdrop = new CSprite();
+}
+
+CWriting::CWriting(int x, int y, int w, int h) : CEntity(x,y,w,h)
+{
+	ADD_Text(new CText());
+	backdrop = new CSprite();
+}
+
+// ----------------------------------------------------------
+// -------------------------- CRATE -------------------------
+// ----------------------------------------------------------
+CCrate::CCrate(CResources* resources, b2World* world, int x, int y, int w, int h) : CEntity()
+{
+	ADD_Sprite(new CSprite(resources->GetTexResources(4)));	
+	ADD_Physics(new CPhysics(world, x, y, w, h));
+}
+
+// ----------------------------------------------------------
+// -------------------------- CRATE -------------------------
+// ----------------------------------------------------------

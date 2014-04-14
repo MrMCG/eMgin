@@ -4,6 +4,10 @@ CText::CText()
 {
 	font = NULL;
 	surf = NULL;
+	color.r = 0;
+	color.g = 0;
+	color.b = 0;
+	color.a = 255;
 
 	font = TTF_OpenFont("SourceSansPro-Regular.ttf", 72);
 
@@ -19,10 +23,20 @@ CText::~CText(void)
 	TTF_CloseFont(font);
 }
 
-void CText::Print(SDL_Renderer* rend, string message, int r, int g, int b)
+void CText::SetColor(int r, int g, int b)
 {
-	SDL_Color color = {r,g,b};
+	color.r = r;
+	color.g = g;
+	color.b = b;
+}
 
+void CText::SetOpacity(int a)
+{
+	color.a = a;
+}
+
+void CText::Print(SDL_Renderer* rend, string message)
+{
 	SDL_FreeSurface(surf);
 	surf = TTF_RenderText_Blended(font, message.c_str(), color);
 
@@ -30,10 +44,8 @@ void CText::Print(SDL_Renderer* rend, string message, int r, int g, int b)
 	tex = SDL_CreateTextureFromSurface(rend, surf);
 }
 
-void CText::Print(SDL_Renderer* rend, int number, int r, int g, int b)
+void CText::Print(SDL_Renderer* rend, int number)
 {
-	SDL_Color color = {r,g,b};
-	
 	string message = to_string((long long)number);
 
 	SDL_FreeSurface(surf);

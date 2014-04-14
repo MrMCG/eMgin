@@ -21,4 +21,5 @@ namespace settings
 
 	const string IMAGE_LOCATION = "resources/images/";
 	const string SOUND_LOCATION = "resources/sounds/";
+	const string LEVEL_LOCATION = "resources/levels/";
 }
