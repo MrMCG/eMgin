@@ -49,6 +49,9 @@ public:
 
 	void UpdatePosition();
 	void UpdateImageSize(float scale=1);
+	void UpdateImageSize(float scaleX, float scaleY);
+
+	void* GetPhysicsData() const;
 
 	inline void SetDebug(bool set) {debug = set;};
 
@@ -86,7 +89,7 @@ protected:
 	CAnimate* animate;
 	CPhysics* physics;
 
-
+	float scale;
 	float angle;
 };
 

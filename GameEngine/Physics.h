@@ -8,6 +8,27 @@
 
 // ^ CAUSE OF MANY ERRORS!
 
+class CCollisionListener : public b2ContactListener
+{
+public:
+	CCollisionListener() {};
+	~CCollisionListener() {bodyA.clear();bodyB.clear();collision.clear();};
+	
+	int ADD_Collision(void* body1);
+	int ADD_Collision(void* body1, void* body2);
+
+	void BeginContact(b2Contact* contact);
+	void EndContact(b2Contact* contact);
+
+	inline bool HasCollided(int index) const {return collision[index];};
+
+private:
+	vector<void*> bodyA;
+	vector<void*> bodyB;
+
+	vector<int> collision;
+};
+
 class CPhysics
 {
 public:
@@ -24,11 +45,12 @@ public:
 	inline int GetHeight() const {return height;};
 	inline CSprite* GetDebugSprite() const {return colTex;};
 
-	void EnableDebugTex(SDL_Renderer* pass_renderer);
+	void EnableDebugTex(SDL_Renderer* pass_renderer, b2World* world, CCollisionListener* colLis);
 	inline SDL_Rect GetColBox() const {return collisionBox;};
 
 	// sets debug rect from Box2D coor to pixel location
-	void UpdateDebug(); 
+	void UpdateDebugPos(); 
+	void UpdateDebugBox(CCollisionListener* colLis);
 
 	static void ApplyBlastImpulse(b2Body* body, b2Vec2 blastCenter, b2Vec2 applyPoint, float blastPower);
 
@@ -47,6 +69,7 @@ private:
 	// used for debug, not neccesary
 	CSprite* colTex;
 	SDL_Rect collisionBox;
+	int colNum;
 };
 
 class RaysCastCallback : public b2RayCastCallback
@@ -70,18 +93,3 @@ public:
  
 };
 
-class CCollisionListener : public b2ContactListener
-{
-public:
-	CCollisionListener(b2Body* body1, b2Body* body2);
-
-	void BeginContact(b2Contact* contact);
-	void EndContact(b2Contact* contact);
-
-	inline bool HasCollided() const {return collision;};
-
-private:
-	void* bodyA;
-	void* bodyB;
-	bool collision;
-};

@@ -3,49 +3,36 @@
 
 using namespace settings;
 
+const int TEX_PLAYER = 1;
+const int TEX_BACKGROUND = 2;
+const int TEX_BULLET = 3;
+const int TEX_METALCRATE = 4;
+const int TEX_METALFLOOR = 5;
+const int TEX_DEBUG = 6;
+const int TEX_ENEMY = 8;
+
 // ----------------------------------------------------------
 // ------------------------- PLAYER -------------------------
 // ----------------------------------------------------------
-CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* world) : CEntity(0,0,50,50)
+CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* world) : CEntity()
 {
-	// Set animation
-	CAnimate* playerAnim = new CAnimate(pass_renderer, resources, 1);
-	playerAnim->SetSpriteSheet(4,4);
-	playerAnim->SetSpeed(128);
-
-	ADD_Animation(playerAnim);
-
 	// Set Physics
-	ADD_Physics(new CPhysics(world, 0, 0, 5, 5));
+	ADD_Physics(new CPhysics(world, 0, 0, 4, 6));
 
-	physics->SetFixedRot(true);
-	physics->GetBody()->SetLinearDamping(2);
-	physics->GetBody()->SetGravityScale(0);
-
-	InitVar();
+	InitVar(pass_renderer, resources);
 }
 
-CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* world, const int x, const int y, const int w, const int h) : CEntity(x,y,w,h)
+CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* world, const int x, const int y, const int w, const int h) : CEntity()
 {
-	// Set animation
-	CAnimate* playerAnim = new CAnimate(pass_renderer, resources, 1);
-	playerAnim->SetSpriteSheet(4,4);
-	playerAnim->SetSpeed(128);
-
-	ADD_Animation(playerAnim);
-
 	// Set Physics
-	ADD_Physics(new CPhysics(world, x/TILE_PIXEL_METER, -y/TILE_PIXEL_METER, w/TILE_PIXEL_METER, h/TILE_PIXEL_METER));
+	ADD_Physics(new CPhysics(world, x, -y, w, h));
 
-	physics->SetFixedRot(true);
-	physics->GetBody()->SetLinearDamping(2);
-	physics->GetBody()->SetGravityScale(0);
-
-	InitVar();
+	InitVar(pass_renderer, resources);
 }
 
-void CPlayer::InitVar()
+void CPlayer::InitVar(SDL_Renderer* pass_renderer, CResources* resources)
 {
+	alive = true;
 	idle=true;
 	falling = false;
 	jumping=false;
@@ -54,6 +41,17 @@ void CPlayer::InitVar()
 	// 2 = looking down
 	// 3 = looking left
 	// 4 = looking right	
+
+	physics->SetFixedRot(true);
+	physics->GetBody()->SetLinearDamping(2);
+	physics->GetBody()->SetGravityScale(0.3);
+
+	// Set animation
+	CAnimate* playerAnim = new CAnimate(pass_renderer, resources, TEX_PLAYER);
+	playerAnim->SetSpriteSheet(4,2);
+	playerAnim->SetSpeed(128);
+
+	ADD_Animation(playerAnim);
 }
 
 void CPlayer::MoveLeft(int force)
@@ -116,19 +114,22 @@ void CPlayer::UpdateState()
 // ----------------------------------------------------------
 // ------------------------- BULLET -------------------------
 // ----------------------------------------------------------
-CBullet::CBullet(CResources* resources) : CEntity(0,0,20,20)
+
+const int FIRE_DELAY = 300;
+
+CBullet::CBullet(CResources* resources, b2World* world) : CEntity()
 {
 	// Set Texture
-	ADD_Sprite(new CSprite(resources->GetTexResources(3)));
-
+	ADD_Sprite(new CSprite(resources->GetTexResources(TEX_BULLET)));
+	ADD_Physics(new CPhysics(world, 0, 0, 1));
 	InitVar();
 }
 
-CBullet::CBullet(CResources* resources, const int x, const int y, const int w, const int h) : CEntity(x,y,w,h)
+CBullet::CBullet(CResources* resources, b2World* world, const int s) : CEntity()
 {
 	// Set Texture
-	ADD_Sprite(new CSprite(resources->GetTexResources(3)));
-
+	ADD_Sprite(new CSprite(resources->GetTexResources(TEX_BULLET)));
+	ADD_Physics(new CPhysics(world, 0, 0, s));
 	InitVar();
 }
 
@@ -136,44 +137,57 @@ void CBullet::InitVar()
 {
 	rayNumber = 32;
 	amountActive = 0;
-}
+	time = 0;
 
-void CBullet::Fire(b2World* world, CPlayer* player, b2Vec2 destination)
-{
-	ADD_Physics(new CPhysics(world, 0, 0, 1));
 	b2Body* body = physics->GetBody();
-	b2Body* origin = player->GetPhysics()->GetBody();
 
 	body->SetLinearVelocity(b2Vec2(0,0));
-	//body->SetFixedRotation(true);
-	physics->GetBody()->SetBullet(true);
-	physics->GetBody()->SetGravityScale(0.3);
-	physics->GetBody()->SetAngularDamping(4);
-
-	b2Vec2 position = origin->GetPosition();
-	b2Vec2 destinationCalced = b2Vec2(destination.x / TILE_PIXEL_METER, destination.y / TILE_PIXEL_METER);
-	b2Vec2 direction = (destinationCalced - origin->GetPosition());
-
-	direction.Normalize();
-	direction *= 4;
-	position += direction;
-
-	physics->GetBody()->SetTransform(position, 0);
-
-	direction = (destinationCalced - origin->GetPosition()); 
-	direction.Normalize();
-	direction *= 1500;
-
-	physics->GetBody()->ApplyLinearImpulse(direction, body->GetLocalCenter());
-
-	amountActive++;
+	body->SetLinearDamping(0);
+	body->SetBullet(true);
+	body->SetGravityScale(0.2);
+	body->SetAngularDamping(4);
+	body->SetActive(false);
 }
 
-void CBullet::Fire(b2World* world, CPlayer* player, bool fire2Direction)
+bool CBullet::Fire(b2World* world, CPlayer* player, b2Vec2 destination)
+{
+	if (time+FIRE_DELAY < SDL_GetTicks())
+	{
+		b2Body* body = physics->GetBody();
+		body->SetActive(true);
+		b2Body* origin = player->GetPhysics()->GetBody();
+		body->SetLinearVelocity(b2Vec2(0,0));
+
+		b2Vec2 position = origin->GetPosition();
+		b2Vec2 destinationCalced = b2Vec2(destination.x / TILE_PIXEL_METER, destination.y / TILE_PIXEL_METER);
+		b2Vec2 direction = (destinationCalced - origin->GetPosition());
+
+		direction.Normalize();
+		//direction *= 2;
+		position += direction;
+
+		body->SetTransform(position, 0);
+
+		direction = (destinationCalced - origin->GetPosition()); 
+		direction.Normalize();
+		direction *= 1000;
+
+		body->ApplyLinearImpulse(direction, body->GetLocalCenter());
+
+		amountActive++;
+		time = SDL_GetTicks();
+
+		return true;
+	}
+
+	return false;
+}
+
+bool CBullet::Fire(b2World* world, CPlayer* player, bool fire2Direction)
 {
 	int face = player->GetFacing();
 	float x = player->GetPosition()->getX();
-	float y = player->GetPosition()->getY();
+	float y = -player->GetPosition()->getY();
 
 	if(fire2Direction)
 	{
@@ -193,23 +207,21 @@ void CBullet::Fire(b2World* world, CPlayer* player, bool fire2Direction)
 	switch (face)
 	{
 	case 1:
-		Fire(world, player, b2Vec2(x, y+1000)); // fire up
+		return Fire(world, player, b2Vec2(x, y+100)); // fire up
 		break;
 	case 2:
-		Fire(world, player, b2Vec2(x,y-1000)); // fire down
+		return Fire(world, player, b2Vec2(x,y-100)); // fire down
 		break;
 	case 3:
-		Fire(world, player, b2Vec2(x-1000,y)); // fire left
+		return Fire(world, player, b2Vec2(x-100,y)); // fire left
 		break;
 	case 4:
-		Fire(world, player, b2Vec2(x+1000,y)); // fire right
+		return Fire(world, player, b2Vec2(x+100,y)); // fire right
 		break;
 	default:
-		Fire(world, player, b2Vec2(x+10,y)); // fire right
+		return Fire(world, player, b2Vec2(x+100,y)); // fire right
 		break;
-
 	}
-	
 }
 
 void CBullet::Explode(b2World* world, float radius, float force)
@@ -233,8 +245,10 @@ void CBullet::Explode(b2World* world, float radius, float force)
 			}
 		}
 
-		world->DestroyBody(physics->GetBody());
-		DELETE_Physics();
+		physics->GetBody()->SetActive(false);
+
+		//world->DestroyBody(physics->GetBody());
+		//DELETE_Physics();
 		amountActive--;
 	}
 }
@@ -260,20 +274,20 @@ CBackground::CBackground(CResources* resources, const int x, const int y, const 
 CTile::CTile(CResources* resources) : CEntity(0,0,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
-	debug = new CSprite(resources->GetTexResources(6));
+	debug = new CSprite(resources->GetTexResources(TEX_DEBUG));
 }
 
 CTile::CTile(CResources* resources, const int x, const int y) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
-	debug = new CSprite(resources->GetTexResources(6));
+	debug = new CSprite(resources->GetTexResources(TEX_DEBUG));
 }
 
 CTile::CTile(CResources* resources, const int x, const int y, const int index) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
 	ADD_Sprite(new CSprite(resources->GetTexResources(index)));
-	debug = new CSprite(resources->GetTexResources(6));
+	debug = new CSprite(resources->GetTexResources(TEX_DEBUG));
 }
 
 void CTile::DrawDebug(SDL_Renderer* pass_renderer)
@@ -299,10 +313,10 @@ CBoundry::CBoundry(CResources* resources, b2World* world) : CEntity()
 	leftSide = new CEntity();
 	rightSide = new CEntity();
 
-	topSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
-	bottomSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
-	leftSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
-	rightSide->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
+	topSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
+	bottomSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
+	leftSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
+	rightSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
 
 	topSide->ADD_Physics(new CPhysics(world, 0, 2, TILE_COLUMN*TILE_SCALE, 2, false));
 	rightSide->ADD_Physics(new CPhysics(world, TILE_COLUMN*TILE_SCALE, 0, 2, 72, false));
@@ -329,24 +343,73 @@ void CBoundry::Draw(SDL_Renderer* pass_renderer)
 CWriting::CWriting() : CEntity()
 {
 	ADD_Text(new CText());
-	backdrop = new CSprite();
+	backdrop = NULL;
 }
 
 CWriting::CWriting(int x, int y, int w, int h) : CEntity(x,y,w,h)
 {
 	ADD_Text(new CText());
-	backdrop = new CSprite();
+	backdrop = NULL;
 }
 
-// ----------------------------------------------------------
-// -------------------------- CRATE -------------------------
-// ----------------------------------------------------------
-CCrate::CCrate(CResources* resources, b2World* world, int x, int y, int w, int h) : CEntity()
+void CWriting::Draw(SDL_Renderer* pass_renderer)
 {
-	ADD_Sprite(new CSprite(resources->GetTexResources(4)));	
-	ADD_Physics(new CPhysics(world, x, y, w, h));
+	if (backdrop != NULL)
+	{
+		SDL_RenderCopyEx (pass_renderer, backdrop->GetTEX(), backdrop->GetCROP(), &rect, abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
+	}
+
+	CEntity::Draw(pass_renderer);
 }
 
 // ----------------------------------------------------------
 // -------------------------- CRATE -------------------------
 // ----------------------------------------------------------
+CCrate::CCrate(CResources* resources, b2World* world, int x, int y, int s) : CEntity()
+{
+	ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALCRATE)));	
+	ADD_Physics(new CPhysics(world, x, -y, s, s));
+}
+
+CCrate::CCrate(CResources* resources, b2World* world, CSprite* csprite, int x, int y, int s) : CEntity()
+{
+	ADD_Sprite(csprite);	
+	ADD_Physics(new CPhysics(world, x, -y, s, s));
+}
+
+
+
+
+// ----------------------------------------------------------
+// -------------------------- ENEMY -------------------------
+// ----------------------------------------------------------
+CEnemy::CEnemy(SDL_Renderer* pass_renderer, CResources* resources, b2World* world) : CEntity()
+{
+	// Set Physics
+	ADD_Physics(new CPhysics(world, 0, 0, 6, 6));
+
+	InitVar(pass_renderer, resources);
+}
+
+CEnemy::CEnemy(SDL_Renderer* pass_renderer, CResources* resources, b2World* world, const int x, const int y, const int w, const int h) : CEntity()
+{
+	// Set Physics
+	ADD_Physics(new CPhysics(world, x, -y, w, h));
+
+	InitVar(pass_renderer, resources);
+}
+
+void CEnemy::InitVar(SDL_Renderer* pass_renderer, CResources* resources)
+{
+	// Set animation
+	CAnimate* EnemyAnim = new CAnimate(pass_renderer, resources, TEX_ENEMY);
+	EnemyAnim->SetSpriteSheet(4,1);
+	EnemyAnim->SetSpeed(128);
+
+	ADD_Animation(EnemyAnim);
+
+	physics->SetFixedRot(true);
+	physics->GetBody()->SetGravityScale(0);
+
+	alive = true;
+}

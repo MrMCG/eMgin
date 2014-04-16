@@ -378,6 +378,12 @@ public:
 	/// Dump this body to a log file
 	void Dump();
 
+	// ADDED FOR EMGIN
+	inline void StartCollision() {m_isColliding=true;};
+	inline void FinishCollision() {m_isColliding=false;};
+
+	inline bool GetColliding() const {return m_isColliding;};
+
 private:
 
 	friend class b2World;
@@ -458,6 +464,9 @@ private:
 	float32 m_sleepTime;
 
 	void* m_userData;
+
+	// ADDED FOR EMGIN
+	bool m_isColliding;
 };
 
 inline b2BodyType b2Body::GetType() const

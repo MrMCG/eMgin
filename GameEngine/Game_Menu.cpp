@@ -1,11 +1,17 @@
 #include "StdAfx.h"
 #include "Game_Menu.h"
 
+namespace settings
+{
+	int* boxData = new INT;
+}
+
 CGame_Menu::CGame_Menu(void)
 {
 	csdl_setup = new CSDL_Setup();
 	csdl_setup->SetRenderer(1);
 	resources = new CResources(csdl_setup->GetRenderer());
+	resources->GetSoundResources()->SetVolume(1,128);
 
 	keyboard = NULL;
 	keyboard = new CInput(10);
@@ -44,6 +50,7 @@ CGame_Menu::~CGame_Menu(void)
 
 void CGame_Menu::Run()
 {
+	resources->PlayMusic(1, -1);
 	while (csdl_setup->GetMainEvent()->type != SDL_QUIT)
 	{
 		game = new CGame(csdl_setup, resources, keyboard);

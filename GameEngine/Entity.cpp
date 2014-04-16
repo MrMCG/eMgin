@@ -189,6 +189,26 @@ void CEntity::UpdateImageSize(float scale)
 	}
 }
 
+void CEntity::UpdateImageSize(float scaleX, float scaleY)
+{
+	if (physics != NULL)
+	{
+		rect.w = (physics->GetWidth() * TILE_PIXEL_METER) * scaleX;
+		rect.h = (physics->GetHeight() * TILE_PIXEL_METER) * scaleY;
+	} else
+	{
+		printf_s("ERROR:CEntity:physics - physics null for update");
+	}
+}
+
+void* CEntity::GetPhysicsData() const
+{
+	if (physics != NULL)
+	{
+		return physics->GetBody()->GetUserData();
+	} 
+}
+
 bool CEntity::SolveCollisions(CEntity* e[])
 {
 	int size = sizeof(e) / sizeof(e[0]);
@@ -216,7 +236,7 @@ void CEntity::Draw(SDL_Renderer* pass_renderer)
 				// display collision box
 				if (physics != NULL && physics->GetDebugSprite() != NULL)
 				{
-					physics->UpdateDebug();
+					physics->UpdateDebugPos();
 					SDL_RenderCopyEx (pass_renderer, physics->GetDebugSprite()->GetTEX(), physics->GetDebugSprite()->GetCROP(), &physics->GetColBox(), abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
 				}
 
@@ -229,6 +249,8 @@ void CEntity::Draw(SDL_Renderer* pass_renderer)
 
 				SDL_Rect pos = rect;
 				pos.y += pos.h;
+				pos.w = 40;
+				pos.h = 40;
 
 				SDL_RenderCopy(pass_renderer, sprite->GetTEX(), NULL, &pos);				
 			}
@@ -238,7 +260,7 @@ void CEntity::Draw(SDL_Renderer* pass_renderer)
 			if (debug && physics != NULL && physics->GetDebugSprite() != NULL)
 			{
 				// display collision box
-				physics->UpdateDebug();
+				physics->UpdateDebugPos();
 				SDL_RenderCopyEx (pass_renderer, physics->GetDebugSprite()->GetTEX(), physics->GetDebugSprite()->GetCROP(), &physics->GetColBox(), abs(fmod(angle,360)), NULL, SDL_FLIP_NONE);
 			}
 		}

@@ -8,10 +8,17 @@ CSprite::CSprite()
 	del = false;
 }
 
-CSprite::CSprite(SDL_Texture* image)
+CSprite::CSprite(SDL_Texture* image, bool copy)
 {
 	tex = NULL;
-	tex = image;
+	if (!copy)
+	{
+		tex = image;
+	} else
+	{
+		tex = (SDL_Texture*) malloc(sizeof(image));
+		tex = image;
+	}
 
 	if (tex == NULL)
 	{
@@ -53,6 +60,11 @@ void CSprite::SetTEX(SDL_Texture* texture)
 }
 
 SDL_Texture* CSprite::GetTEX() const
+{
+	return tex;
+}
+
+SDL_Texture* CSprite::GetTEXMod() 
 {
 	return tex;
 }

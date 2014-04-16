@@ -5,7 +5,6 @@
 class CPlayer : public CEntity
 {
 public:
-	CPlayer() {InitVar();};
 	CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* world);
 	CPlayer(SDL_Renderer* pass_renderer, 
 			CResources* resources, 
@@ -25,33 +24,37 @@ public:
 
 	inline int GetFacing() const {return facing;};
 	inline bool GetFalling() const {return falling;};
-
 	inline bool GetIdle() const {return idle;};
+	inline int isAlive() const {return alive;};
+
+	inline void Revive() {alive=true;physics->GetBody()->SetActive(true);};
+	inline void Kill() {alive=false;physics->GetBody()->SetActive(false);};
 	inline void SetIdle(bool flag) {idle=flag;};
 
 private:
-	void InitVar();
+	void InitVar(SDL_Renderer* pass_renderer, CResources* resources);
 
 	int facing;
 	bool falling;
 	bool jumping;
 	bool idle;
+	bool alive;
 };
 
 class CBullet : public CEntity
 {
 public:
-	CBullet() {rayNumber=32;amountActive=0;};
-	CBullet(CResources* resources); 
-	CBullet(CResources* resources, const int x, const int y, const int w, const int h);
+	CBullet() {InitVar();};
+	CBullet(CResources* resources, b2World* world); 
+	CBullet(CResources* resources, b2World* world, const int s);
 
 	~CBullet(void){};
 
 	inline void SetRays(int num){rayNumber = num;};
 	inline bool IsActive() const {return amountActive;};
 
-	void Fire(b2World* world, CPlayer* player, b2Vec2 destination);
-	void Fire(b2World* world, CPlayer* player, bool fire2Direction=true);
+	bool Fire(b2World* world, CPlayer* player, b2Vec2 destination);
+	bool Fire(b2World* world, CPlayer* player, bool fire2Direction=true);
 
 	void Explode(b2World* world, float radius, float force);
 private:
@@ -59,6 +62,7 @@ private:
 
 	int rayNumber;
 	int amountActive;
+	int time;
 };
 
 class CBackground : public CEntity
@@ -118,7 +122,10 @@ public:
 	inline void Print(SDL_Renderer* rend, int number) {sprite->Print(rend, number);};
 	inline void SetColor(int r, int g, int b) {sprite->SetColor(r,g,b);};
 	inline void SetOpacity(int a) {sprite->SetOpacity(a);};
+	inline void SetBackdrop(CSprite* sprite) {backdrop=sprite;};
 	inline CSprite* GetBackdrop() {return backdrop;};
+
+	void CWriting::Draw(SDL_Renderer* pass_renderer);
 
 	~CWriting(){delete backdrop;};
 
@@ -129,18 +136,39 @@ private:
 class CCrate : public CEntity
 {
 public:
-	CCrate(CResources* resources, b2World* world, int x, int y, int w, int h);
+	CCrate(CResources* resources, b2World* world, int x, int y, int s);
+	CCrate(CResources* resources, b2World* world, CSprite* csprite, int x, int y, int s);
 
 
 	~CCrate(){};
 };
-/*
+
 class CFloor : public CEntity
 {
 public:
-	CCrate(CResources* resources, b2World* world, int x, int y, int w, int h);
+	CFloor(CResources* resources, b2World* world, int x, int y, int w, int h);
 
 
-	~CCrate(){};
+	~CFloor(){};
 };
-*/
+
+class CEnemy : public CEntity
+{
+public:
+	CEnemy(SDL_Renderer* pass_renderer, CResources* resources, b2World* world);
+	CEnemy(SDL_Renderer* pass_renderer, 
+			CResources* resources, 
+			b2World* world, 
+			const int x, const int y, const int w, const int h);
+
+	inline int isAlive() const {return alive;};
+
+	inline void Revive() {alive=true;physics->GetBody()->SetActive(true);};
+	inline void Kill() {alive=false;physics->GetBody()->SetActive(false);};
+
+	~CEnemy(){};
+private:
+	void InitVar(SDL_Renderer* pass_renderer, CResources* resources);
+
+	bool alive;
+};

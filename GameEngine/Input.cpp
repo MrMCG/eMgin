@@ -85,7 +85,7 @@ void CInput::Poll(SDL_Event* mainEvent)
 		{
 			if (store[i] == key)
 			{
-				keys[i]->Enable(); 
+				keys[i]->Enable(); 		
 				break;
 			}
 		}
@@ -96,7 +96,7 @@ void CInput::Poll(SDL_Event* mainEvent)
 		for (int i = 0; i < size; i++)
 		{
 			if (store[i] == key)
-			{		
+			{			
 				keys[i]->Disable(); 
 				break;
 			}
@@ -104,15 +104,17 @@ void CInput::Poll(SDL_Event* mainEvent)
 		break;
 
 	case SDL_MOUSEBUTTONDOWN:
+		mouseX = mainEvent->button.x;
+		mouseY = mainEvent->button.y;
 		mouseClick = true;
 		break;
 	case SDL_MOUSEBUTTONUP:
 		mouseClick = false;
 		break;
-	case SDL_MOUSEMOTION:
+	/*case SDL_MOUSEMOTION:
 		mouseX = mainEvent->button.x;
 		mouseY = mainEvent->button.y;
-		break;
+		break;*/
 	}
 
 }

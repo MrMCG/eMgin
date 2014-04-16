@@ -13,6 +13,15 @@
 
 using namespace settings;
 
+enum dynamicEntites
+{
+	MAX_ENTITIES,
+	ENEMIES,
+	CRATES,
+	FLOOR,
+	EXPLOSIVES
+};
+
 class CGame
 {
 public:
@@ -31,35 +40,32 @@ private:
 	CInput* input;
 
 	CDebug* debug;
-
+	b2World* world;
+	CBoundry* screenBoundry;
 	CBackground* background;
 	CTile* tiles[TILE_COLUMN][TILE_ROW];
 	CPlayer* player;
+
+	CEnemy** enemies;
+	CCrate** crates;
 	CBullet* bullet;
+
+	CWriting* timer;
+	CWriting* bulletStatus;
+	CWriting* restart;
+
 	CEntity* floor;
-	CWriting* score;
-
 	CEntity* testFloor;
-	CCrate* testBox;
+	CCollisionListener* colList;
 
-	CBoundry* screenBoundry;
-
-	CCollisionListener* testListener;
-
-	CEntity** boxes;
-	int size;
-
-	b2World* world;
-
-	bool idle;
+	int size[4];
+	vector<int> colDet;
 	bool DEBUG;
-
 	bool quit;
-
-	int SCORE;
-
+	int time;
 	float timePrevious;
 	float timeCurrent;
 	float inputTime;
+	bool playerWon;
 };
 

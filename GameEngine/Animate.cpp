@@ -35,6 +35,8 @@ CAnimate::CAnimate(SDL_Renderer* pass_renderer, CResources* resources, int index
 	
 	rowSize = 4;
 	columnSize = 4;
+
+	resetFrame = false;
 }
 
 CAnimate::~CAnimate(void)
@@ -48,11 +50,14 @@ void CAnimate::PerformAnimation(int animType)
 	if (animType != prevAnimType)
 	{
 		prevAnimType = animType;
-		currentFrame = 0;
+		if (resetFrame)
+		{
+			currentFrame = 0;
+		}
 	}
 	if (!error && delay + speed < SDL_GetTicks())
 	{
-		if (columnSize-1 <= currentFrame)
+		if (currentFrame >= columnSize-1)
 		{
 			currentFrame = 0;
 		} else
@@ -60,10 +65,10 @@ void CAnimate::PerformAnimation(int animType)
 			currentFrame++;
 		}
 
-		crop.x = currentFrame * (texWidth/rowSize);
-		crop.y = animType * (texHeight/columnSize);
-		crop.w = texWidth/rowSize;
-		crop.h = texHeight/columnSize;
+		crop.x = currentFrame * (texWidth/columnSize);
+		crop.y = animType * (texHeight/rowSize);
+		crop.w = texWidth/columnSize;
+		crop.h = texHeight/rowSize;
 
 		UpdateDelay();
 	}
@@ -71,10 +76,10 @@ void CAnimate::PerformAnimation(int animType)
 
 void CAnimate::UseFrame(int column, int row)
 {
-	crop.x = column * (texWidth/rowSize);
-	crop.y = row * (texHeight/columnSize);
-	crop.w = texWidth/rowSize;
-	crop.h = texHeight/columnSize;
+	crop.x = column * (texWidth/columnSize);
+	crop.y = row * (texHeight/rowSize);
+	crop.w = texWidth/columnSize;
+	crop.h = texHeight/rowSize;
 	currentFrame = column;
 }
 

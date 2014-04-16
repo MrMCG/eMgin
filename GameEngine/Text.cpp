@@ -9,7 +9,7 @@ CText::CText()
 	color.b = 0;
 	color.a = 255;
 
-	font = TTF_OpenFont("SourceSansPro-Regular.ttf", 72);
+	font = TTF_OpenFont("SourceSansPro-Regular.ttf", 288);
 
 	if (font == NULL)
 	{

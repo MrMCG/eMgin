@@ -5,7 +5,7 @@
 class CSprite
 {
 public:
-	CSprite(SDL_Texture* image);
+	CSprite(SDL_Texture* image, bool copy=false);
 	CSprite();
 
 	virtual ~CSprite(void);
@@ -15,6 +15,7 @@ public:
 	inline void ToggleDel(){del=!del;};
 
 	SDL_Texture* GetTEX() const;
+	SDL_Texture* GetTEXMod();
 	SDL_Rect* GetCROP() const;
 
 	// used for CText

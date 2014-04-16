@@ -29,11 +29,13 @@ CPhysics::CPhysics(b2World* world, int x, int y, int w, int h, bool dyn)
     fixturedef.shape=&polygon;
     fixturedef.density=1;
     body->CreateFixture(&fixturedef);
-	body->SetUserData(this);
 
 	colTex = NULL;
 	isCircle = false;
 	collisionBox = SDL_Rect();
+	colNum = -1;
+
+	body->SetUserData(this);
 }
 
 CPhysics::CPhysics(b2World* world, int x, int y, int r, bool dyn)
@@ -61,6 +63,9 @@ CPhysics::CPhysics(b2World* world, int x, int y, int r, bool dyn)
 	colTex = NULL;
 	isCircle = true;
 	collisionBox = SDL_Rect();
+	colNum = -1;
+
+	body->SetUserData(this);
 }
 
 CPhysics::~CPhysics()
@@ -70,7 +75,7 @@ CPhysics::~CPhysics()
 	delete colTex;
 }
 
-void CPhysics::EnableDebugTex(SDL_Renderer* pass_renderer)
+void CPhysics::EnableDebugTex(SDL_Renderer* pass_renderer, b2World* world, CCollisionListener* colLis)
 {
 	string path;
 	if (isCircle)
@@ -97,13 +102,29 @@ void CPhysics::EnableDebugTex(SDL_Renderer* pass_renderer)
 
 	collisionBox.w = width * TILE_PIXEL_METER;
 	collisionBox.h = height * TILE_PIXEL_METER;
-	UpdateDebug();
+	UpdateDebugPos();
+
+	colNum = colLis->ADD_Collision(body->GetUserData());
 }
 
-void CPhysics::UpdateDebug()
+void CPhysics::UpdateDebugPos()
 {
 	collisionBox.x = (int) ((body->GetPosition().x * TILE_PIXEL_METER) - (collisionBox.w / 2));
 	collisionBox.y = (int) -((body->GetPosition().y * TILE_PIXEL_METER) + (collisionBox.h / 2)); // involves flipping y axis
+}
+
+void CPhysics::UpdateDebugBox(CCollisionListener* colLis)
+{
+	if (colNum != -1)
+	{
+		if (colLis->HasCollided(colNum))
+		{
+			SDL_SetTextureColorMod(colTex->GetTEX(),255,150,150);
+		} else
+		{
+			SDL_SetTextureColorMod(colTex->GetTEX(),150,150,255);
+		}
+	}
 }
 
 void CPhysics::ApplyBlastImpulse(b2Body* body, b2Vec2 blastCenter, b2Vec2 applyPoint, float blastPower)
@@ -123,11 +144,24 @@ void CPhysics::ApplyBlastImpulse(b2Body* body, b2Vec2 blastCenter, b2Vec2 applyP
 // ----------------------------------------------------------
 // ------------------- CCOLLISIONLISTENER -------------------
 // ----------------------------------------------------------
-CCollisionListener::CCollisionListener(b2Body* body1, b2Body* body2) 
+int CCollisionListener::ADD_Collision(void* body1) 
 {
-	bodyA = body1->GetUserData();
-	bodyB = body2->GetUserData();
-	collision = false;
+	bodyA.push_back(body1);
+	bodyB.push_back(body1);
+	
+	collision.push_back(0);
+
+	return collision.size()-1;
+}
+
+int CCollisionListener::ADD_Collision(void* body1, void* body2) 
+{
+	bodyA.push_back(body1);
+	bodyB.push_back(body2);
+	
+	collision.push_back(0);
+
+	return collision.size()-1;
 }
 
 void CCollisionListener::BeginContact(b2Contact* contact)
@@ -135,10 +169,22 @@ void CCollisionListener::BeginContact(b2Contact* contact)
 	void* firstBody = contact->GetFixtureA()->GetBody()->GetUserData();
 	void* secondBody = contact->GetFixtureB()->GetBody()->GetUserData();
 
-	if ((firstBody == bodyA && secondBody == bodyB) ||
-	    (firstBody == bodyB && secondBody == bodyA))
+	for (int i = 0; i < bodyA.size(); i++)
 	{
-		collision = true;
+		if (bodyA[i] == bodyB[i])
+		{
+			if (firstBody == bodyA[i] || secondBody == bodyA[i])
+			{
+				collision[i]++;
+			}
+		} else
+		{
+			if ((firstBody == bodyA[i] && secondBody == bodyB[i]) ||
+				(firstBody == bodyB[i] && secondBody == bodyA[i]))
+			{
+				collision[i]++;
+			}
+		}
 	}
 }
 
@@ -147,10 +193,22 @@ void CCollisionListener::EndContact(b2Contact* contact)
 	void* firstBody = contact->GetFixtureA()->GetBody()->GetUserData();
 	void* secondBody = contact->GetFixtureB()->GetBody()->GetUserData();
 
-	if ((firstBody == bodyA && secondBody == bodyB) ||
-	    (firstBody == bodyB && secondBody == bodyA))
+	for (int i = 0; i < bodyA.size(); i++)
 	{
-		collision = false;
+		if (bodyA[i] == bodyB[i])
+		{
+			if (firstBody == bodyA[i] || secondBody == bodyA[i])
+			{
+				collision[i]--;
+			}
+		} else
+		{
+			if ((firstBody == bodyA[i] && secondBody == bodyB[i]) ||
+				(firstBody == bodyB[i] && secondBody == bodyA[i]))
+			{
+				collision[i]--;
+			}
+		}
 	}
 }
 

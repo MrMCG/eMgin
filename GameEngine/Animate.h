@@ -27,6 +27,9 @@ public:
 	// set animation speed
 	inline void SetSpeed(int cSpeed) {speed=cSpeed;};
 
+	// set frame reset
+	inline void SetReset(bool flag) {resetFrame=flag;};
+
 	SDL_Texture* GetTEX() const;
 	SDL_Rect GetCROP() const;
 	int GetRow() const;
@@ -41,6 +44,9 @@ private:
 	int currentFrame;
 	int delay;	
 	int prevAnimType;
+
+	// reset frame start on change of animation
+	bool resetFrame;
 
 	// how often to run the animation
 	int speed;

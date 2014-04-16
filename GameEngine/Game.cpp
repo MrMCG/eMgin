@@ -2,15 +2,13 @@
 
 CGame::CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedInput)
 {
+	// get application resources
 	window = NULL;
 	window = csdl_setup;
 	resources = NULL;
 	resources = passedResources;
 	input = NULL;
-	input = passedInput;
-
-	
-	
+	input = passedInput;	
 
 	ifstream file(LEVEL_LOCATION+"map.txt");
 	size_t pos = 0;
@@ -43,11 +41,21 @@ CGame::CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passed
 		}
 	}
 
+
+
 	// Init dev tools
 	debug = new CDebug(window->GetRenderer());
+
+	size[MAX_ENTITIES] = 2;
+	size[ENEMIES] = 2;
+	size[CRATES] = 0;
 	
 	// create world
 	world = new b2World(b2Vec2(0.0,-100));
+
+	// Enable collision detection
+	colList = new CCollisionListener();
+	world->SetContactListener(colList);
 
 	// create world border
 	screenBoundry = new CBoundry(resources, world);
@@ -67,19 +75,28 @@ CGame::CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passed
 
 	// create player
 	player = new CPlayer(window->GetRenderer(), resources, world);
-	
+	player->GetPhysics()->EnableDebugTex(window->GetRenderer(), world, colList);
+
 	// create re-usable bullet
-	bullet = new CBullet(resources);
+	bullet = new CBullet(resources, world);
+	bullet->GetPhysics()->EnableDebugTex(window->GetRenderer(), world, colList);
 
-	// create crates
-	testBox = new CCrate(resources, world, 20, -10, 2, 2);
+	// create score timer
+	time = 20000+SDL_GetTicks();
+	timer = new CWriting(SCREEN_WIDTH/2-70, 0, 140,70);
+	timer->SetColor(255,255,255);
+	timer->Print(window->GetRenderer(), time);
 
-	// create score
-	SCORE = 0;
-	score = new CWriting(SCREEN_WIDTH/2-40, 0, 80,45);
-	score->SetColor(255,255,255);
-	score->Print(window->GetRenderer(), SCORE);
+	// create bullet status
+	bulletStatus = new CWriting(0, SCREEN_HEIGHT-70, 140,70);
+	bulletStatus->SetColor(0,255,0);
+	bulletStatus->Print(window->GetRenderer(), "ARMED");
 
+	// create end game display
+	restart = new CWriting(0, SCREEN_HEIGHT/4, SCREEN_WIDTH, SCREEN_HEIGHT/4);
+	restart->SetColor(255,0,0);
+	restart->SetBackdrop(new CSprite(resources->GetTexResources(7)));
+	restart->Print(window->GetRenderer(), "YOU LOSE!");
 
 
 	floor = new CEntity();
@@ -87,27 +104,31 @@ CGame::CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passed
 	
 	floor->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
 	testFloor->ADD_Sprite(new CSprite(resources->GetTexResources(5)));
-	testBox->ADD_Sprite(new CSprite(resources->GetTexResources(4)));	
 	
 	floor->ADD_Physics(new CPhysics(world, 10, -20, 8, 4, false));
 	testFloor->ADD_Physics(new CPhysics(world, 18, -20, 8, 4, false));
 	
-	
-
 	// randomly create boxes
-	size = 4;
 	int posX;
 	int posY;
 	int radius;
-	boxes = new CEntity*[size];
-	for (int k = 0; k < size; k ++)
+	crates = new CCrate*[size[CRATES]];
+	enemies = new CEnemy*[size[ENEMIES]];
+	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
 	{
 		radius = 4;//(int) (rand() % 5) + 2;
 		posX = (int) (rand() % 123) + 1;
-		posY = (int) (rand() % 30) + 1;
-		boxes[k] = new CEntity(0, 150, radius*TILE_PIXEL_METER, radius*TILE_PIXEL_METER);
-		boxes[k]->ADD_Sprite(new CSprite(resources->GetTexResources(4)));
-		boxes[k]->ADD_Physics(new CPhysics(world, posX, -posY, radius, radius));
+		posY = (int) (rand() % 60) + 1;
+
+		if (k < size[CRATES])
+		{
+			crates[k] = new CCrate(resources, world, posX, posY, radius);
+		}
+
+		if (k < size[ENEMIES])
+		{
+			enemies[k] = new CEnemy(window->GetRenderer(), resources, world, posX, posY, 6, 6);
+		}
 	}
 
 
@@ -117,18 +138,29 @@ CGame::CGame(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passed
 	timePrevious = 1;
 	inputTime = 0;
 
-	idle = true;
 	DEBUG = false;	
+	quit = false;
+	playerWon = false;
 
-	testListener = new CCollisionListener(player->GetPhysics()->GetBody(), testBox->GetPhysics()->GetBody());
-	world->SetContactListener(testListener);
+	// ------------------------- Create collisions -------------------------
+	// ------------------------- Order is important! -----------------------
+	for (int k = 0; k < size[ENEMIES]; k ++)
+	{
+		colDet.push_back( colList->ADD_Collision(bullet->GetPhysicsData(), enemies[k]->GetPhysicsData()) );
+	}
 }
 
 CGame::~CGame(void)
 {	
-	
+	// derefrence
+	input = NULL;
+	window = NULL;
+	resources = NULL;
+
+	delete debug;
+	delete world;
+	delete screenBoundry;
 	delete background;
-	delete player;
 	for (int i = 0; i < TILE_COLUMN; i++)
 	{
 		for (int j = 0; j < TILE_ROW; j++)
@@ -136,82 +168,157 @@ CGame::~CGame(void)
 			delete tiles[i][j];
 		}
 	}
-	delete score;
-	delete world;
-	delete bullet;
-	delete floor;
-	delete debug;
+	delete player;
 
-	delete testFloor;
-	delete testBox;
-
-	delete screenBoundry;
-
-	for (int k = 0; k < size; k ++)
+	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
 	{
-		delete boxes[k];
+		if (k < size[CRATES])
+		{
+			delete crates[k];
+		}
+		if (k < size[ENEMIES])
+		{
+			delete enemies[k];
+		}
 	}
+	delete crates;
+	delete enemies;
+	delete bullet;
 
-	delete boxes;
-
-	// derefrence
-	input = NULL;
-	window = NULL;
-	resources = NULL;
+	delete timer;
+	delete bulletStatus;
+	delete restart;
+	
+	delete floor;
+	delete testFloor;
+	delete colList;
 }
 
 void CGame::GameLoop()
 {
-	quit = false;
+	
 	while(window->GetMainEvent()->type != SDL_QUIT && !quit)
 	{	
+		// update game timers and frames
 		timePrevious = timeCurrent;
 		timeCurrent = SDL_GetTicks();		
 
-		window->Begin();	
+		window->Begin(); // clear frame
 
-		input->Poll(window->GetMainEvent());
+		input->Poll(window->GetMainEvent()); // get input
 
-		HandleEvents();
+		HandleEvents(); // update game state
 
-		DrawEntities();
+		DrawEntities(); // draw
 
-		window->End();
+		window->End(); // end frame
 	}
 }
 
 void CGame::HandleEvents()
 {
+	if (time)
+	{
+		time -= timeCurrent - timePrevious; // accurately update game time;
+	} 
+
 	if (inputTime+INPUT_DELAY < timeCurrent)
 	{		
-		if(input->GetKey(0)->IsEnabled()) // walk up - w
+		// ------------------------- Player related updates -------------------------
+		if (player->isAlive() && !playerWon)
 		{
-			player->MoveUp(2000);
-			player->GetAnimation()->PerformAnimation(3);
-			player->SetIdle(false);
+			if(input->GetKey(0)->IsEnabled()) // walk up - w
+			{
+				player->MoveUp(2000);
+				player->GetAnimation()->PerformAnimation(1);
+			
+				resources->PlaySound(3,0,1);
+			
+			
+				player->SetIdle(false);
+			} 
+
+			if(input->GetKey(1)->IsEnabled()) // walk down - s
+			{
+				player->MoveDown(2000);
+			}
+
+			if(input->GetKey(2)->IsEnabled()) // walk left - a
+			{	
+				player->MoveLeft(2000);		
+				player->GetAnimation()->PerformAnimation(1);
+			
+				resources->PlaySound(3,0,1);
+			
+				player->SetIdle(false);
+			}
+
+			if(input->GetKey(3)->IsEnabled()) // walk right - d
+			{
+				player->MoveRight(2000);
+				player->GetAnimation()->PerformAnimation(1);
+
+				resources->PlaySound(3,0,1);
+				
+				player->SetIdle(false);
+			}
+
+			if(input->GetKey(8)->IsEnabled()) // fire - space
+			{
+				if (!bullet->IsActive() && bullet->Fire(world, player))
+				{
+					resources->PlaySound(2,0);
+				}
+			}
+
+			if (player->GetIdle()) // display idle animation
+			{
+				player->GetAnimation()->PerformAnimation(0);		
+			} 
+
+			player->SetIdle(true);
+
+			// ------------------------- determine if player has won -------------------------
+			playerWon = true;
+			for (int k = 0; k < size[ENEMIES]; k ++)
+			{
+				if (enemies[k]->isAlive())
+				{
+					playerWon = false;
+					break;
+				}
+			}
+
+			if (bullet->IsActive()) // update bullet status
+			{
+				bulletStatus->SetColor(255,0,0);
+				bulletStatus->Print(window->GetRenderer(), "DISARMED");
+			} else
+			{
+				bulletStatus->SetColor(0,255,0);
+				bulletStatus->Print(window->GetRenderer(), "ARMED");
+			}
+
+			if (time < 0) // update player state based on timer
+			{
+				time = 0;
+				player->Kill();
+				timer->Print(window->GetRenderer(), "0");
+			}
+
+			timer->Print(window->GetRenderer(), time/10);
+
+			if (playerWon) // handle player win
+			{
+				restart->SetColor(0,255,0);
+				restart->Print(window->GetRenderer(), "YOU WON!");
+
+				timer->Print(window->GetRenderer(), time/10);
+				time = 0;
+			}		
 		}
 
-		if(input->GetKey(1)->IsEnabled()) // walk down - s
-		{
-			player->MoveDown(2000);
-			player->GetAnimation()->PerformAnimation(0);
-			player->SetIdle(false);
-		}
-
-		if(input->GetKey(2)->IsEnabled()) // walk left - a
-		{	
-			player->MoveLeft(2000);		
-			player->GetAnimation()->PerformAnimation(1);
-			player->SetIdle(false);
-		}
-
-		if(input->GetKey(3)->IsEnabled()) // walk right - d
-		{
-			player->MoveRight(2000);
-			player->GetAnimation()->PerformAnimation(2);
-			player->SetIdle(false);
-		}
-
+		// ------------------------- Other input -------------------------
 		if(input->GetKey(4)->IsEnabled()) // exit - esc
 		{
 			window->GetMainEvent()->type = SDL_QUIT; 		
@@ -226,73 +333,54 @@ void CGame::HandleEvents()
 		{
 			DEBUG = true;		
 			player->SetDebug(true);
-			testFloor->SetDebug(true);
-			testBox->SetDebug(true);
-
-			for (int k = 0; k < size; k ++)
-			{
-				boxes[k]->SetDebug(true);
-			}
-
-			SCORE += 5;
-			score->Print(window->GetRenderer(), SCORE);
+			bullet->SetDebug(true);
 		}
 
 		if(input->GetKey(7)->IsEnabled()) // dev tools off - ;
 		{
 			DEBUG = false;		
 			player->SetDebug(false);
-			testFloor->SetDebug(false);
-			testBox->SetDebug(false);
-
-			for (int k = 0; k < size; k ++)
-			{
-				boxes[k]->SetDebug(false);
-			}
+			bullet->SetDebug(false);
 		}
 
-		if(input->GetKey(8)->IsEnabled()) // explode - space
-		{
-			
-		}
+		// ------------------------- Handle Other Events -------------------------
 		
-		if (input->GetMouseClick()) // mouse click
-		{
-			if (!bullet->IsActive())
-			{
-				b2Vec2 mouse = b2Vec2(input->GetMouseX(), -input->GetMouseY());
-				bullet->Fire(world, player, mouse);
-			}
-		}
 
-		if (player->GetIdle())
-		{
-			player->GetAnimation()->UseFrame(1,0);		
-		} 
-
-		if (DEBUG)
+		if (DEBUG) // update debug
 		{		
 			RUNDebug();
 		}
 
 		HandlePhysics();
 
+		// update state
 		inputTime = timeCurrent;
-		player->SetIdle(true);
+		
 	}
 }
 
 void CGame::HandlePhysics()
 {	
 	// Update world physics
-	world->Step(1.0f/30.0f, 5, 3);
+	world->Step(1.0f/20.0f, 5, 3);
 
-	// Update entity Positions
-
+	// ----------------- Update entity Positions --------------
 	// boxes
-	for (int k = 0; k < size; k ++)
+	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
 	{
-		boxes[k]->UpdatePosition();
+		if (k < size[CRATES])
+		{
+			crates[k]->UpdatePosition();
+		}
+		if (k < size[ENEMIES])
+		{
+			enemies[k]->UpdatePosition();
+			enemies[k]->GetAnimation()->PerformAnimation(0);
+			if (DEBUG)
+			{
+				enemies[k]->GetPhysics()->UpdateDebugBox(colList);
+			}
+		}	
 	}
 
 	// player
@@ -306,20 +394,29 @@ void CGame::HandlePhysics()
 	}
 	// testfloor
 	testFloor->UpdatePosition();
-	// testbox
-	testBox->UpdatePosition();
 
-	if (bullet->CollidesWith(testBox))
+
+	if (DEBUG)
 	{
-		if (bullet->IsActive())
-		{
-			bullet->Explode(world, 50, 10000);
-		}
+		player->GetPhysics()->UpdateDebugBox(colList);
+		bullet->GetPhysics()->UpdateDebugBox(colList);
 	}
 
-	if (testListener->HasCollided())
+
+	// ------------------------- COLLISIONS -------------------------
+	for (int k = 0; k < size[ENEMIES]; k ++)
 	{
-		cout << " collision " << endl;
+		if (colList->HasCollided(colDet[k]))
+		{
+
+			resources->PlaySound(1,0,2);
+			if (bullet->IsActive())
+			{
+				bullet->Explode(world, 500, 10000);
+			}
+			enemies[k]->Kill();
+			
+		}
 	}
 }
 
@@ -340,23 +437,44 @@ void CGame::DrawEntities()
 	}		
 	
 
-	for (int k = 0; k < size; k ++)
+	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
 	{
-		boxes[k]->Draw(window->GetRenderer());
+		if(k < size[CRATES])
+		{
+			crates[k]->Draw(window->GetRenderer());
+		}
+
+		if(k < size[ENEMIES])
+		{
+			if (enemies[k]->isAlive())
+			{
+				
+				enemies[k]->Draw(window->GetRenderer());
+			}
+		}
 	}
 
 	screenBoundry->Draw(window->GetRenderer());
 	
 	floor->Draw(window->GetRenderer());
+
 	if (bullet->IsActive())
 	{
 		bullet->Draw(window->GetRenderer());
 	}
-	score->Draw(window->GetRenderer());
-
+	
 	testFloor->Draw(window->GetRenderer());
-	testBox->Draw(window->GetRenderer());
-	player->Draw(window->GetRenderer());
+
+	if (player->isAlive() && !playerWon)
+	{
+		player->Draw(window->GetRenderer());
+	} else 
+	{
+		restart->Draw(window->GetRenderer());
+	}
+
+	timer->Draw(window->GetRenderer());
+	bulletStatus->Draw(window->GetRenderer());
 
 	if (DEBUG)
 	{
@@ -364,7 +482,7 @@ void CGame::DrawEntities()
 	}
 }
 
-string CGame::GetFrames()
+string CGame::GetFrames() // update frame rate (approx)
 {
 	float num = timeCurrent - timePrevious;
 	if (num < 5)
@@ -376,7 +494,7 @@ string CGame::GetFrames()
 	}
 }
 
-void CGame::RUNDebug()
+void CGame::RUNDebug() // send framerate to debug
 {
 	debug->UpdateFrames(window->GetRenderer(), GetFrames());
 }
