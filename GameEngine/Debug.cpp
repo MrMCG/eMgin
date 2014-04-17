@@ -4,36 +4,35 @@
 
 using namespace settings;
 
-CDebug::CDebug(SDL_Renderer* renderer)
+CDebug::CDebug(SDL_Renderer* renderer, string level)
 {
-	videoCard = new CEntity();
-	string message = SDL_GetVideoDriver(0);
-	videoCard->SetAll(10,(SCREEN_HEIGHT/30)*0,message.size()*15,SCREEN_HEIGHT/32);
-	videoCard->ADD_Text(new CText());
-	
-	videoCard->GetSprite()->Print(renderer, message);
+	levelName = new CWriting(10,(SCREEN_HEIGHT/30)*0,150,SCREEN_HEIGHT/32);
+	levelName->Print(renderer, level);
 
-	Frames = new CEntity();
-	Frames->SetAll(10,(SCREEN_HEIGHT/30)*1,150,SCREEN_HEIGHT/32);
-	Frames->ADD_Text(new CText());
+	string message = SDL_GetVideoDriver(0);
+	info = new CWriting(10,(SCREEN_HEIGHT/30)*1,message.size()*15,SCREEN_HEIGHT/32);
+	info->Print(renderer, message);
+
+	frames = new CWriting(10,(SCREEN_HEIGHT/30)*2,150,SCREEN_HEIGHT/32);
 }
 
 CDebug::~CDebug(void)
 {
-	delete Frames;
-	delete videoCard;
+	delete frames;
+	delete info;
+	delete levelName;
 }
 
 void CDebug::Run(SDL_Renderer* renderer)
 {
-	videoCard->Draw(renderer);
-	
-	Frames->Draw(renderer);
+	info->Draw(renderer);
+	levelName->Draw(renderer);
+	frames->Draw(renderer);
 }
 
 void CDebug::UpdateFrames(SDL_Renderer* renderer, string msg)
 {
-	Frames->GetSprite()->Print(renderer, msg);
+	frames->Print(renderer, msg);
 }
 
 

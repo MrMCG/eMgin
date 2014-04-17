@@ -1,16 +1,10 @@
 #include "StdAfx.h"
 #include "Game_Init.h"
 
-namespace settings
-{
-	int* boxData = new INT;
-}
-
 CGame_Init::CGame_Init(void)
 {
 	// ------------------------- INIT SDL -------------------------
 	csdl_setup = new CSDL_Setup();
-	csdl_setup->SetRenderer(1);
 
 	// ------------------------- INIT Resources -------------------------
 	SDL_Renderer* renderer = csdl_setup->GetRenderer();
@@ -46,6 +40,11 @@ CGame_Init::CGame_Init(void)
 	input->Add(new CKeyboard_Event(SDLK_QUOTE)); // 6
 	input->Add(new CKeyboard_Event(SDLK_SEMICOLON)); // 7
 	input->Add(new CKeyboard_Event(SDLK_SPACE)); // 8
+	input->Add(new CKeyboard_Event(SDLK_e), "e"); // 9
+
+	levels[0] = "level1/";
+	levels[1] = "level2/";
+	levels[2] = "level3/";
 }
 
 CGame_Init::~CGame_Init(void)
@@ -58,11 +57,16 @@ CGame_Init::~CGame_Init(void)
 void CGame_Init::Run()
 {
 	resources->PlayMusic(1, -1);
+	int currentLevel = 0;
 	while (csdl_setup->GetMainEvent()->type != SDL_QUIT)
 	{
-		game = new CLevel(csdl_setup, resources, input);
+		game = new CLevel(csdl_setup, resources, input, levels[currentLevel]);
 
-		game->GameLoop();
+		if (game->GameLoop())
+		{
+			currentLevel++;
+			currentLevel %= LEVELS;
+		}
 
 		delete game;
 	}

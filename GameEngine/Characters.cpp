@@ -17,6 +17,7 @@ const int TEX_ENEMY = 8;
 CPlayer::CPlayer(SDL_Renderer* pass_renderer, CResources* resources, b2World* world) : CEntity()
 {
 	// Set Physics
+	// place player in the middle of the screen
 	ADD_Physics(new CPhysics(world, 0, 0, 4, 6));
 
 	InitVar(pass_renderer, resources);
@@ -277,13 +278,13 @@ CTile::CTile(CResources* resources) : CEntity(0,0,TILE_COLUMN_CALC,TILE_ROW_CALC
 	debug = new CSprite(resources->GetTex(TEX_DEBUG));
 }
 
-CTile::CTile(CResources* resources, const int x, const int y) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
+CTile::CTile(CResources* resources, const int x, const int y) : CEntity(x*TILE_COLUMN_CALC,y*TILE_ROW_CALC,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
 	debug = new CSprite(resources->GetTex(TEX_DEBUG));
 }
 
-CTile::CTile(CResources* resources, const int x, const int y, const int index) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
+CTile::CTile(CResources* resources, const int x, const int y, const int index) : CEntity(x*TILE_COLUMN_CALC,y*TILE_ROW_CALC,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
 	ADD_Sprite(new CSprite(resources->GetTex(index)));
@@ -293,6 +294,7 @@ CTile::CTile(CResources* resources, const int x, const int y, const int index) :
 void CTile::SetSolid(b2World* world)
 {
 	ADD_Physics(new CPhysics(world, rect.x/TILE_PIXEL_METER, -rect.y/TILE_PIXEL_METER, TILE_SCALE, TILE_SCALE, false));
+	physics->GetBody()->GetFixtureList()->SetFriction(3);
 }
 
 void CTile::DrawDebug(SDL_Renderer* pass_renderer)
@@ -397,6 +399,14 @@ CEnemy::CEnemy(SDL_Renderer* pass_renderer, CResources* resources, b2World* worl
 {
 	// Set Physics
 	ADD_Physics(new CPhysics(world, x, -y, w, h));
+
+	InitVar(pass_renderer, resources);
+}
+
+CEnemy::CEnemy(SDL_Renderer* pass_renderer, CResources* resources, b2World* world, const int x, const int y) : CEntity()
+{
+	// Set Physics
+	ADD_Physics(new CPhysics(world, x, -y, 6, 4));
 
 	InitVar(pass_renderer, resources);
 }

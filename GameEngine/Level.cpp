@@ -1,6 +1,6 @@
 #include "Level.h"
 
-CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedInput)
+CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedInput, string levelName)
 {
 	// get application resources
 	window = NULL;
@@ -8,53 +8,80 @@ CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* pass
 	resources = NULL;
 	resources = passedResources;
 	input = NULL;
-	input = passedInput;	
-
-	ifstream file(LEVEL_LOCATION+"map.txt");
-	size_t pos = 0;
-	string line;
-	string current;
-	while (getline(file, line))
-	{
-		if (line.substr(0,1) == "[")
-		{
-			string area = line.substr(1, line.length()-2);
-			if (area == "background")
-			{
-				cout << "BG" << endl;
-			} else if (area == "test")
-			{
-				cout << "tt" << endl;
-			} else
-			{
-				cout << "could not read" << endl;
-			}
-		} else
-		{
-			
-			while((pos = line.find(",")) != string::npos)
-			{
-				current = line.substr(0, pos);
-				cout << current << endl;
-				line.erase(0, pos+1);
-			}
-		}
-	}
+	input = passedInput;
 
 	// init dynamic entities
-	size[ENEMIES] = 2;
-	size[CRATES] = 0;
-	size[FLOOR] = 2;
-	size[MAX_ENTITIES] = size[ENEMIES]+size[CRATES]+size[FLOOR];
-	crates = new CCrate*[size[CRATES]];
-	enemies = new CEnemy*[size[ENEMIES]];
-	floor = new CTile*[size[FLOOR]];
+	tiles = new vector<CTile*>;
+	floor = new vector<CTile*>;
+	crates = new vector<CCrate*>;
+	enemies = new vector<CEnemy*>;
+
+	// init contacts
+	contacts[BULLET_ENEMIES] = -1;
+	contacts[BULLET_CRATES] = -1;
+	contacts[PLAYER_CRATES] = -1;
 
 	// Init dev tools
-	debug = new CDebug(window->GetRenderer());
+	debug = new CDebug(window->GetRenderer(),levelName);
 
 	// create world
 	world = new b2World(b2Vec2(0.0,-100));
+
+	// load map
+	location = LEVEL_LOCATION+levelName;
+	ifstream file(location+"_map.txt");
+	size_t pos = 0;
+	string line;
+	string current;
+	if (file)
+	{
+		int x,y,s;
+		while(file >> x >> y >> s)
+		{
+			CTile* tile = new CTile(resources,x,y,5);
+			if (s)
+			{			
+				tile->SetSolid(world);
+				floor->push_back(tile);
+			} else
+			{
+				tiles->push_back(tile);
+			}
+		}
+	}
+	file.close();
+
+	// load crates
+	file.open(location+"_crates.txt");
+	pos = 0;
+	line = "";
+	current = "";
+	if (file)
+	{
+		int x,y,s;
+		while(file >> x >> y >> s)
+		{
+			CCrate* crate = new CCrate(resources, world,x,y,s);
+			crates->push_back(crate);
+		}
+	}
+	file.close();
+
+	// load enemies
+	file.open(location+"_enemies.txt");
+	pos = 0;
+	line = "";
+	current = "";
+	if (file)
+	{
+		int x,y;
+		while(file >> x >> y)
+		{
+			CEnemy* enemy = new CEnemy(window->GetRenderer(), resources,world,x,y);
+			enemies->push_back(enemy);
+		}
+	}
+	file.close();
 
 	// Enable collision detection
 	colList = new CCollisionListener();
@@ -66,21 +93,6 @@ CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* pass
 	// create background
 	background = new CBackground(resources);
 
-	// create tiles
-	for (int i = 0; i < TILE_COLUMN; i++)
-	{
-		for (int j = 0; j < TILE_ROW; j++)
-		{
-			tiles[i][j] = new CTile(resources, TILE_COLUMN_CALC*i, TILE_ROW_CALC*j);
-		}
-	}
-	tiles[7][3]->ADD_Sprite(new CSprite(resources->GetTex(5)));
-	tiles[7][3]->SetSolid(world);
-	tiles[9][3]->ADD_Sprite(new CSprite(resources->GetTex(5)));
-	tiles[9][3]->SetSolid(world);
-	floor[0] = tiles[7][2];
-	floor[1] = tiles[9][3];
-
 	// create player
 	player = new CPlayer(window->GetRenderer(), resources, world);
 	player->GetPhysics()->EnableDebugTex(window->GetRenderer(), world, colList);
@@ -90,7 +102,7 @@ CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* pass
 	bullet->GetPhysics()->EnableDebugTex(window->GetRenderer(), world, colList);
 
 	// create score timer
-	time = 20000+SDL_GetTicks();
+	time = 60000+SDL_GetTicks(); // set to 30 seconds
 	timer = new CWriting(SCREEN_WIDTH/2-70, 0, 140,70);
 	timer->SetColor(255,255,255);
 	timer->Print(window->GetRenderer(), time);
@@ -106,34 +118,18 @@ CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* pass
 	restart->SetBackdrop(new CSprite(resources->GetTex(7)));
 	restart->Print(window->GetRenderer(), "YOU LOSE!");
 
+	// load score
+	scores = new CWriting(0, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/8);
+	scores->SetColor(255,255,255);
+	scores->SetBackdrop(new CSprite(resources->GetTex(7)));
+	scores->Print(window->GetRenderer(), "     Your Score: 0     ");
+
 	// create end instruction
-	instruction = new CWriting(0, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/8);
+	instruction = new CWriting(0, (SCREEN_HEIGHT/8)*5, SCREEN_WIDTH, SCREEN_HEIGHT/8);
 	instruction->SetColor(255,255,255);
 	instruction->SetBackdrop(new CSprite(resources->GetTex(7)));
-	instruction->Print(window->GetRenderer(), "Press 'r' To Restart");
-	
-	// randomly create boxes
-	int posX;
-	int posY;
-	int radius;
-	
-	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
-	{
-		radius = 4;//(int) (rand() % 5) + 2;
-		posX = (int) (rand() % 123) + 1;
-		posY = (int) (rand() % 60) + 1;
+	instruction->Print(window->GetRenderer(), "   Press 'r' To Restart   ");
 
-		if (k < size[CRATES])
-		{
-			crates[k] = new CCrate(resources, world, posX, posY, radius);
-		}
-
-		if (k < size[ENEMIES])
-		{
-			enemies[k] = new CEnemy(window->GetRenderer(), resources, world, posX, posY, 6, 6);
-		}
-	}
-	
 	// init game variables
 	timeCurrent = 1;
 	timePrevious = 1;
@@ -142,12 +138,26 @@ CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* pass
 	DEBUG = false;	
 	quit = false;
 	playerWon = false;
+	next = false;
 
 	// ------------------------- Create collisions -------------------------
 	// ------------------------- Order is important! -----------------------
-	for (int k = 0; k < size[ENEMIES]; k ++)
+	for (vector<CEnemy*>::iterator it = enemies->begin(); it < enemies->end(); it++)
 	{
-		colDet.push_back( colList->ADD_Collision(bullet->GetPhysicsData(), enemies[k]->GetPhysicsData()) );
+		colDet.push_back( colList->ADD_Collision(bullet->GetPhysicsData(), (*it)->GetPhysicsData()) );
+		contacts[BULLET_ENEMIES]++;
+	}
+	contacts[BULLET_CRATES] = contacts[BULLET_ENEMIES];
+	for (vector<CCrate*>::iterator it = crates->begin(); it < crates->end(); it++)
+	{
+		colDet.push_back( colList->ADD_Collision(bullet->GetPhysicsData(), (*it)->GetPhysicsData()) );
+		contacts[BULLET_CRATES]++;
+	}
+	contacts[PLAYER_CRATES] = contacts[BULLET_CRATES];
+	for (vector<CCrate*>::iterator it = crates->begin(); it < crates->end(); it++)
+	{
+		colDet.push_back( colList->ADD_Collision(player->GetPhysicsData(), (*it)->GetPhysicsData()) );
+		contacts[PLAYER_CRATES]++;
 	}
 }
 
@@ -164,32 +174,26 @@ CLevel::~CLevel(void)
 	delete background;	
 	delete player;
 
-	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
+	for (vector<CEnemy*>::iterator it = enemies->begin(); it < enemies->end(); it++)
 	{
-		if (k < size[CRATES])
-		{
-			delete crates[k];
-		}
-		if (k < size[ENEMIES])
-		{
-			delete enemies[k];
-		}
-		if (k < size[FLOOR])
-		{
-			floor[k]=NULL;
-		}
+		delete (*it);
+	}
+	delete enemies;
+	for (vector<CCrate*>::iterator it = crates->begin(); it < crates->end(); it++)
+	{
+		delete (*it);
 	}
 	delete crates;
-	delete enemies;
-	delete floor;
-
-	for (int i = 0; i < TILE_COLUMN; i++)
+	for (vector<CTile*>::iterator it = tiles->begin(); it < tiles->end(); it++)
 	{
-		for (int j = 0; j < TILE_ROW; j++)
-		{
-			delete tiles[i][j];
-		}
+		delete (*it);
 	}
+	delete tiles;
+	for (vector<CTile*>::iterator it = floor->begin(); it < floor->end(); it++)
+	{
+		delete (*it);
+	}
+	delete floor;
 
 	delete bullet;
 	delete timer;
@@ -200,7 +204,7 @@ CLevel::~CLevel(void)
 	delete colList;
 }
 
-void CLevel::GameLoop()
+int CLevel::GameLoop()
 {
 	
 	while(window->GetMainEvent()->type != SDL_QUIT && !quit)
@@ -211,14 +215,14 @@ void CLevel::GameLoop()
 
 		window->Begin(); // clear frame
 
-		
-
 		HandleEvents(); // update game state
 
-		DrawEntities(); // draw
+		DrawEntities(); // draw	
 
 		window->End(); // end frame
 	}
+
+	return next;
 }
 
 void CLevel::HandleEvents()
@@ -228,17 +232,23 @@ void CLevel::HandleEvents()
 		time -= timeCurrent - timePrevious; // update score
 	} 
 
+	if(window->ResetScreen())
+	{
+		quit = true;	
+	}
+
 	if (inputTime+INPUT_DELAY < timeCurrent)
 	{		
 		input->Poll(window->GetMainEvent()); // get input
 
+		
 
 		// ------------------------- Player related updates -------------------------
 		if (player->isAlive() && !playerWon)
 		{
 			if(input->GetKey(0)->IsEnabled()) // walk up - w
 			{
-				player->MoveUp(2000);
+				player->MoveUp(2500);
 				player->GetAnimation()->PerformAnimation(1);
 			
 				resources->PlaySound(3,0,1);
@@ -254,7 +264,7 @@ void CLevel::HandleEvents()
 
 			if(input->GetKey(2)->IsEnabled()) // walk left - a
 			{	
-				player->MoveLeft(1500);		
+				player->MoveLeft(2000);		
 				player->GetAnimation()->PerformAnimation(1);
 			
 				resources->PlaySound(3,0,1);
@@ -264,7 +274,7 @@ void CLevel::HandleEvents()
 
 			if(input->GetKey(3)->IsEnabled()) // walk right - d
 			{
-				player->MoveRight(1500);
+				player->MoveRight(2000);
 				player->GetAnimation()->PerformAnimation(1);
 
 				resources->PlaySound(3,0,1);
@@ -289,13 +299,46 @@ void CLevel::HandleEvents()
 
 			// ------------------------- determine if player has won -------------------------
 			playerWon = true;
-			for (int k = 0; k < size[ENEMIES]; k ++)
+			for (vector<CEnemy*>::iterator it = enemies->begin(); it < enemies->end(); it++)
 			{
-				if (enemies[k]->isAlive())
+				if ((*it)->isAlive())
 				{
 					playerWon = false;
 					break;
 				}
+			}
+
+			if (playerWon)
+			{
+				// load scores
+				// load map
+				ifstream file;
+				file.open(location+"_scores.txt");
+				size_t pos = 0;
+				string line;
+				string current;
+				int hiScore = 0;
+				if (file)
+				{
+					int x;
+					while(file >> x)
+					{
+						hiScore = x;
+					}
+				}
+				file.close();
+
+				if (time/10 > hiScore)
+				{
+					scores->Print(window->GetRenderer(), "   New Hi-Score!: "+to_string((long long)time/10)+"   ");
+					hiScore = time/10;
+					ofstream writer(location+"_scores.txt");
+					writer << hiScore << endl;		
+					writer.close();
+				} else
+				{
+					scores->Print(window->GetRenderer(), "   Your Score: "+to_string((long long)time/10)+ "     Hi-Score: "+to_string((long long)hiScore)+"   ");
+				}				
 			}
 
 			if (bullet->IsActive()) // update bullet status
@@ -308,13 +351,6 @@ void CLevel::HandleEvents()
 				bulletStatus->Print(window->GetRenderer(), "ARMED");
 			}
 
-			if (time < 0) // update player state based on timer
-			{
-				time = 0;
-				player->Kill();
-				timer->Print(window->GetRenderer(), "0");
-			}
-
 			timer->Print(window->GetRenderer(), time/10);
 
 			if (playerWon) // handle player win
@@ -322,7 +358,7 @@ void CLevel::HandleEvents()
 				restart->SetColor(0,255,0);
 				restart->Print(window->GetRenderer(), "YOU WON!");
 
-				instruction->Print(window->GetRenderer(), "-r- To Restart      -e- To Continue");
+				instruction->Print(window->GetRenderer(), "  -r- To Restart      -e- To Continue  ");
 
 				timer->Print(window->GetRenderer(), time/10);
 				time = 0;
@@ -335,7 +371,7 @@ void CLevel::HandleEvents()
 			window->GetMainEvent()->type = SDL_QUIT; 		
 		}
 
-		if(input->GetKey(5)->IsEnabled() && time/10 < 1900) // reset - r
+		if(input->GetKey(5)->IsEnabled() && time < 59000) // reset - r
 		{
 			quit = true;
 		}
@@ -354,8 +390,19 @@ void CLevel::HandleEvents()
 			bullet->SetDebug(false);
 		}
 
+		if( (playerWon || DEBUG) && input->GetKey("e")->IsEnabled() ) // continue to next level - e ;
+		{
+			next = true;
+			quit = true;
+		}
+
 		// ------------------------- Handle Other Events -------------------------
-		
+		if (time < 0) // update player state based on timer
+		{
+			time = 0;
+			player->Kill();
+			timer->Print(window->GetRenderer(), "0");
+		}
 
 		if (DEBUG) // update debug
 		{		
@@ -363,6 +410,7 @@ void CLevel::HandleEvents()
 		}
 
 		HandlePhysics();
+		
 
 		// update time state
 		inputTime = timeCurrent;
@@ -373,25 +421,33 @@ void CLevel::HandleEvents()
 void CLevel::HandlePhysics()
 {	
 	// Update world physics
-	world->Step(1.0f/30.0f, 5, 3);
+	if (player->isAlive())
+	{
+		world->Step(1.0f/40.0f, 5, 3);
+	} else // if player is dead, slow physics down
+	{
+		world->Step(1.0f/1000.0f, 5, 3);
+	}
 
 	// ----------------- Update entity Positions --------------
 	// dynamic entities
-	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
+	// enemies
+	for (vector<CEnemy*>::iterator it = enemies->begin(); it < enemies->end(); it++)
 	{
-		if (k < size[CRATES])
+		(*it)->UpdatePosition();
+		(*it)->GetAnimation()->PerformAnimation(0);
+
+		// debug updates
+		if (DEBUG)
 		{
-			crates[k]->UpdatePosition();
+			(*it)->GetPhysics()->UpdateDebugBox(colList);
 		}
-		if (k < size[ENEMIES])
-		{
-			enemies[k]->UpdatePosition();
-			enemies[k]->GetAnimation()->PerformAnimation(0);
-			if (DEBUG)
-			{
-				enemies[k]->GetPhysics()->UpdateDebugBox(colList);
-			}
-		}	
+	}
+
+	// crates
+	for (vector<CCrate*>::iterator it = crates->begin(); it < crates->end(); it++)
+	{
+		(*it)->UpdatePosition();
 	}
 
 	// player
@@ -403,6 +459,7 @@ void CLevel::HandlePhysics()
 		bullet->UpdatePosition();
 	}
 
+	// debug updates
 	if (DEBUG)
 	{
 		player->GetPhysics()->UpdateDebugBox(colList);
@@ -411,8 +468,9 @@ void CLevel::HandlePhysics()
 
 
 	// ------------------------- COLLISIONS -------------------------
-	int entColCount = size[ENEMIES];
-	for (int k = 0; k < entColCount; k ++)
+	// bullet and enemies
+	int entColCount = contacts[BULLET_ENEMIES];
+	for (int k = 0; k <= entColCount; k ++)
 	{
 		if (colList->HasCollided(colDet[k]))
 		{
@@ -422,8 +480,44 @@ void CLevel::HandlePhysics()
 			{
 				bullet->Explode(world, 10, 1000);
 			}
-			enemies[k]->Kill();
-			
+			enemies->at(k)->Kill();		
+		}
+	}
+
+	// bullet and crate
+	for (int k = entColCount; k <= contacts[BULLET_CRATES]; k ++)
+	{
+		if (colList->HasCollided(colDet[k]))
+		{
+			if (bullet->IsActive())
+			{
+				resources->PlaySound(1,0,2);
+				bullet->Explode(world, 15, 1500);
+			}	
+		}
+	}
+
+	// player and crate
+	entColCount = contacts[BULLET_CRATES];
+	for (int k = entColCount; k <= contacts[PLAYER_CRATES]; k ++)
+	{
+		// if player collides with crates and is alive
+		if (colList->HasCollided(colDet[k]) && player->isAlive()) 
+		{
+			// play explosion
+			resources->PlaySound(1,0,2); 
+			if (bullet->IsActive()) // if bullet is active - explode
+			{
+				bullet->Explode(world, 10, 1000);
+			} else
+			{
+				if (bullet->Fire(world, player)) // fire bullet and explode
+				{
+					bullet->Explode(world, 10, 1000);
+				}
+			} 
+			// kill player
+			player->Kill();	
 		}
 	}
 }
@@ -432,33 +526,34 @@ void CLevel::DrawEntities()
 {
 	background->Draw(window->GetRenderer());	
 
-	for (int i = 0; i < TILE_COLUMN; i++)
+	for (vector<CTile*>::iterator it = tiles->begin(); it < tiles->end(); it++)
 	{
-		for (int j = 0; j < TILE_ROW; j++)
+		(*it)->Draw(window->GetRenderer());
+		if (DEBUG)
 		{
-			tiles[i][j]->Draw(window->GetRenderer());
-			if (DEBUG)
-			{
-				tiles[i][j]->DrawDebug(window->GetRenderer());
-			}
+			(*it)->DrawDebug(window->GetRenderer());
 		}
-	}		
-	
+	}
 
-	for (int k = 0; k < size[MAX_ENTITIES]; k ++)
+	for (vector<CTile*>::iterator it = floor->begin(); it < floor->end(); it++)
 	{
-		if(k < size[CRATES])
+		(*it)->Draw(window->GetRenderer());
+		if (DEBUG)
 		{
-			crates[k]->Draw(window->GetRenderer());
+			(*it)->DrawDebug(window->GetRenderer());
 		}
+	}	
 
-		if(k < size[ENEMIES])
+	for (vector<CCrate*>::iterator it = crates->begin(); it < crates->end(); it++)
+	{
+		(*it)->Draw(window->GetRenderer());
+	}
+
+	for (vector<CEnemy*>::iterator it = enemies->begin(); it < enemies->end(); it++)
+	{
+		if ((*it)->isAlive())
 		{
-			if (enemies[k]->isAlive())
-			{
-				
-				enemies[k]->Draw(window->GetRenderer());
-			}
+			(*it)->Draw(window->GetRenderer());
 		}
 	}
 
@@ -472,10 +567,11 @@ void CLevel::DrawEntities()
 	if (player->isAlive() && !playerWon)
 	{
 		player->Draw(window->GetRenderer());
-	} else 
+	} else
 	{
 		restart->Draw(window->GetRenderer());
 		instruction->Draw(window->GetRenderer());
+		scores->Draw(window->GetRenderer());
 	}
 
 	timer->Draw(window->GetRenderer());

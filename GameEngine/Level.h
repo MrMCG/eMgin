@@ -14,18 +14,17 @@ using namespace settings;
 
 enum dynamicEntites
 {
-	MAX_ENTITIES,
-	ENEMIES,
-	CRATES,
-	FLOOR
+	BULLET_ENEMIES,
+	BULLET_CRATES,
+	PLAYER_CRATES
 };
 
 class CLevel
 {
 public:
-	CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedInput);
+	CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* passedInput, string levelName);
 	~CLevel(void);
-	void GameLoop();
+	int GameLoop();
 	void HandleEvents();
 	void HandlePhysics();
 	void DrawEntities();
@@ -43,21 +42,21 @@ private:
 	CBackground* background;
 	CPlayer* player;
 
-	CEnemy** enemies;
-	CCrate** crates;
-	CTile** floor;
-
-	CTile* tiles[TILE_COLUMN][TILE_ROW];
+	vector<CEnemy*>* enemies;
+	vector<CCrate*>* crates;
+	vector<CTile*>* tiles;
+	vector<CTile*>* floor;
 	
 	CBullet* bullet;
 	CWriting* timer;
 	CWriting* bulletStatus;
 	CWriting* restart;
 	CWriting* instruction;
+	CWriting* scores;
 
 	CCollisionListener* colList;
 
-	int size[4];
+	int contacts[4];
 	vector<int> colDet;
 	bool DEBUG;
 	bool quit;
@@ -66,5 +65,7 @@ private:
 	float timeCurrent;
 	float inputTime;
 	bool playerWon;
+	bool next;
+	string location;
 };
 

@@ -136,8 +136,8 @@ private:
 class CCrate : public CEntity
 {
 public:
-	CCrate(CResources* resources, b2World* world, int x, int y, int s);
-	CCrate(CResources* resources, b2World* world, CSprite* csprite, int x, int y, int s);
+	CCrate(CResources* resources, b2World* world, int x, int y, int s=2);
+	CCrate(CResources* resources, b2World* world, CSprite* csprite, int x, int y, int s=2);
 
 
 	~CCrate(){};
@@ -151,6 +151,10 @@ public:
 			CResources* resources, 
 			b2World* world, 
 			const int x, const int y, const int w, const int h);
+	CEnemy(SDL_Renderer* pass_renderer, 
+			CResources* resources, 
+			b2World* world, 
+			const int x, const int y);
 
 	inline int isAlive() const {return alive;};
 

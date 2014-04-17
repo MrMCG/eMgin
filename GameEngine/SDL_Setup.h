@@ -9,6 +9,11 @@ private:
 	SDL_Renderer* renderer;
 	SDL_Window* window;
 	SDL_Event* mainEvent;
+	int res[11][2];
+
+	void SetScreen(int flags);
+	void LoadSettings();
+	void CalcSettings();
 
 public:
 	CSDL_Setup();
@@ -16,16 +21,10 @@ public:
 
 	SDL_Renderer* GetRenderer() const;
 	SDL_Event* GetMainEvent() const;
-	void SetRenderer(int flags);
 
-	inline int GetScreenWidth()
-	{return mainEvent->window.data1;}
-
+	bool ResetScreen();
+	
 	void Begin();
 	void End();
-
-
-
-	
 };
 

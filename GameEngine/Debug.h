@@ -1,10 +1,11 @@
 #pragma once
 #include "Entity.h"
+#include "Characters.h"
 
 class CDebug
 {
 public:
-	CDebug(SDL_Renderer* renderer);
+	CDebug(SDL_Renderer* renderer, string level);
 	~CDebug(void);
 	void Run(SDL_Renderer* renderer);
 
@@ -13,7 +14,8 @@ public:
 	void UpdateFrames(SDL_Renderer* renderer, string msg);
 
 private:
-	CEntity* Frames;
-	CEntity* videoCard;
+	CWriting* frames;
+	CWriting* info;
+	CWriting* levelName;
 };
 

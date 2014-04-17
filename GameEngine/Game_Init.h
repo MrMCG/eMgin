@@ -4,6 +4,8 @@
 #include "Resources.h"
 #include "Input.h"
 
+const int LEVELS = 3;
+
 class CGame_Init
 {
 public:
@@ -19,5 +21,6 @@ private:
 	CLevel* game;
 	CResources* resources;
 	CInput* input;
+	string levels[LEVELS];
 };
 
