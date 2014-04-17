@@ -77,6 +77,7 @@ void CSDL_Setup::Begin()
 {
 	SDL_RenderClear(renderer);
 	SDL_PollEvent(mainEvent);
+
 }
 
 void CSDL_Setup::End()

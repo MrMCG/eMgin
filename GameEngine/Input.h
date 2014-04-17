@@ -1,32 +1,67 @@
 #pragma once
 #include "StdAfx.h"
-#include "Input_Event.h"
+
+class CInput_Event
+{
+protected:
+	bool ENABLED;
+	bool USED;
+
+public:
+	CInput_Event() {ENABLED=false;USED=false;};
+	virtual ~CInput_Event(void) {};
+
+	virtual bool IsEnabled() const {return ENABLED;};
+	virtual bool IsUsed() const {return USED;};
+	
+	virtual void Enable() {ENABLED = true;};
+	virtual void Disable() {ENABLED = false;};
+
+	virtual void Used() {USED = true;};
+	virtual void NotUsed() {USED = false;};
+
+	virtual void SetKey(SDL_Keycode key) = 0;
+	virtual SDL_Keycode GetKey() const = 0;
+	
+};
+
+class CKeyboard_Event : public CInput_Event
+{
+protected:
+	SDL_Keycode KEY;
+public:
+	CKeyboard_Event(SDL_Keycode key) {KEY=key;};
+	virtual ~CKeyboard_Event(void) {};
+
+	void SetKey(SDL_Keycode key) {KEY = key;};
+	SDL_Keycode GetKey() const {return KEY;};
+};
+
+struct KEYPress
+{
+	CInput_Event* key;
+	int index;
+	string name;
+};
 
 class CInput
 {
 public:
-	CInput(int num);
+	CInput();
 	~CInput(void);
 
-	void INIT_INPUT();
-	void AddEvent(CInput_Event* evnt);
-	void RemoveEvent(CInput_Event* evnt);
-	//void UpdateEvent(CInput_Event evnt);
+	bool Add(CInput_Event* evnt, string name="");
 
-	CInput_Event* GetKey(int num) {return keys[num];};
+	CInput_Event* GetKey(int index) const;
+	CInput_Event* GetKey(string name) const;
 	void Poll(SDL_Event* mainEvent);
 
 	int GetMouseX() const {return mouseX;};
 	int GetMouseY() const {return mouseY;};
 	bool GetMouseClick() const {return mouseClick;};
 
-	int SearchEmpty();
-	void print();
-
 private:
-	CInput_Event** keys;
-	Sint32* store;
-	unsigned short size;
+	vector<KEYPress>* keys;
 
 	int mouseX;
 	int mouseY;

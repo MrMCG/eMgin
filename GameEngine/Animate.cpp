@@ -3,7 +3,7 @@
 CAnimate::CAnimate(SDL_Renderer* pass_renderer, CResources* resources, int index)
 {
 	tex = NULL;
-	tex = resources->GetTexResources(index);
+	tex = resources->GetTex(index);
 
 	if (tex == NULL)
 	{
@@ -12,7 +12,7 @@ CAnimate::CAnimate(SDL_Renderer* pass_renderer, CResources* resources, int index
 
 	// uses error tex
 	// dont animatte
-	if (this->tex == resources->GetTexResources(0))
+	if (this->tex == resources->GetTex(0))
 	{
 		error = true;
 	} else

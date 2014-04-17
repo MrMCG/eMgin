@@ -1,10 +1,10 @@
-#include "Game_Menu.h"
+#include "Game_Init.h"
 
 int testingVar;
 
 int main(int argc, char *argv[]) 
 {
-	CGame_Menu menu = CGame_Menu();
+	CGame_Init menu = CGame_Init();
 
 	menu.Run();
 

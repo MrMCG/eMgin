@@ -117,18 +117,18 @@ void CPlayer::UpdateState()
 
 const int FIRE_DELAY = 300;
 
-CBullet::CBullet(CResources* resources, b2World* world) : CEntity()
+CBullet::CBullet(CResources* resources, b2World* world, int s) : CEntity()
 {
 	// Set Texture
-	ADD_Sprite(new CSprite(resources->GetTexResources(TEX_BULLET)));
-	ADD_Physics(new CPhysics(world, 0, 0, 1));
+	ADD_Sprite(new CSprite(resources->GetTex(TEX_BULLET)));
+	ADD_Physics(new CPhysics(world, 0, 0, s));
 	InitVar();
 }
 
-CBullet::CBullet(CResources* resources, b2World* world, const int s) : CEntity()
+CBullet::CBullet(CResources* resources, b2World* world, CSprite* cSprite, int s) : CEntity()
 {
 	// Set Texture
-	ADD_Sprite(new CSprite(resources->GetTexResources(TEX_BULLET)));
+	ADD_Sprite(cSprite);
 	ADD_Physics(new CPhysics(world, 0, 0, s));
 	InitVar();
 }
@@ -144,7 +144,7 @@ void CBullet::InitVar()
 	body->SetLinearVelocity(b2Vec2(0,0));
 	body->SetLinearDamping(0);
 	body->SetBullet(true);
-	body->SetGravityScale(0.2);
+	body->SetGravityScale(0.05);
 	body->SetAngularDamping(4);
 	body->SetActive(false);
 }
@@ -259,13 +259,13 @@ void CBullet::Explode(b2World* world, float radius, float force)
 CBackground::CBackground(CResources* resources) : CEntity(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 {
 	// Set Texture
-	ADD_Sprite(new CSprite(resources->GetTexResources(2)));	
+	ADD_Sprite(new CSprite(resources->GetTex(2)));	
 }
 
 CBackground::CBackground(CResources* resources, const int x, const int y, const int w, const int h) : CEntity(x,y,w,h)
 {
 	// Set Texture
-	ADD_Sprite(new CSprite(resources->GetTexResources(2)));	
+	ADD_Sprite(new CSprite(resources->GetTex(2)));	
 }
 
 // ----------------------------------------------------------
@@ -274,20 +274,25 @@ CBackground::CBackground(CResources* resources, const int x, const int y, const 
 CTile::CTile(CResources* resources) : CEntity(0,0,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
-	debug = new CSprite(resources->GetTexResources(TEX_DEBUG));
+	debug = new CSprite(resources->GetTex(TEX_DEBUG));
 }
 
 CTile::CTile(CResources* resources, const int x, const int y) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
-	debug = new CSprite(resources->GetTexResources(TEX_DEBUG));
+	debug = new CSprite(resources->GetTex(TEX_DEBUG));
 }
 
 CTile::CTile(CResources* resources, const int x, const int y, const int index) : CEntity(x,y,TILE_COLUMN_CALC,TILE_ROW_CALC)
 {
 	// Set Texture
-	ADD_Sprite(new CSprite(resources->GetTexResources(index)));
-	debug = new CSprite(resources->GetTexResources(TEX_DEBUG));
+	ADD_Sprite(new CSprite(resources->GetTex(index)));
+	debug = new CSprite(resources->GetTex(TEX_DEBUG));
+}
+
+void CTile::SetSolid(b2World* world)
+{
+	ADD_Physics(new CPhysics(world, rect.x/TILE_PIXEL_METER, -rect.y/TILE_PIXEL_METER, TILE_SCALE, TILE_SCALE, false));
 }
 
 void CTile::DrawDebug(SDL_Renderer* pass_renderer)
@@ -313,10 +318,10 @@ CBoundry::CBoundry(CResources* resources, b2World* world) : CEntity()
 	leftSide = new CEntity();
 	rightSide = new CEntity();
 
-	topSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
-	bottomSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
-	leftSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
-	rightSide->ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALFLOOR)));
+	topSide->ADD_Sprite(new CSprite(resources->GetTex(TEX_METALFLOOR)));
+	bottomSide->ADD_Sprite(new CSprite(resources->GetTex(TEX_METALFLOOR)));
+	leftSide->ADD_Sprite(new CSprite(resources->GetTex(TEX_METALFLOOR)));
+	rightSide->ADD_Sprite(new CSprite(resources->GetTex(TEX_METALFLOOR)));
 
 	topSide->ADD_Physics(new CPhysics(world, 0, 2, TILE_COLUMN*TILE_SCALE, 2, false));
 	rightSide->ADD_Physics(new CPhysics(world, TILE_COLUMN*TILE_SCALE, 0, 2, 72, false));
@@ -367,7 +372,7 @@ void CWriting::Draw(SDL_Renderer* pass_renderer)
 // ----------------------------------------------------------
 CCrate::CCrate(CResources* resources, b2World* world, int x, int y, int s) : CEntity()
 {
-	ADD_Sprite(new CSprite(resources->GetTexResources(TEX_METALCRATE)));	
+	ADD_Sprite(new CSprite(resources->GetTex(TEX_METALCRATE)));	
 	ADD_Physics(new CPhysics(world, x, -y, s, s));
 }
 
@@ -376,9 +381,6 @@ CCrate::CCrate(CResources* resources, b2World* world, CSprite* csprite, int x, i
 	ADD_Sprite(csprite);	
 	ADD_Physics(new CPhysics(world, x, -y, s, s));
 }
-
-
-
 
 // ----------------------------------------------------------
 // -------------------------- ENEMY -------------------------

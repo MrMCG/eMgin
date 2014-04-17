@@ -44,9 +44,8 @@ private:
 class CBullet : public CEntity
 {
 public:
-	CBullet() {InitVar();};
-	CBullet(CResources* resources, b2World* world); 
-	CBullet(CResources* resources, b2World* world, const int s);
+	CBullet(CResources* resources, b2World* world, int s=1); 
+	CBullet(CResources* resources, b2World* world, CSprite* cSprite, int s=1);
 
 	~CBullet(void){};
 
@@ -78,12 +77,13 @@ public:
 class CTile : public CEntity
 {
 public:
-	CTile(void) {debug=new CSprite();};
+	CTile() {debug=new CSprite();};
 	CTile(CResources* resources);
 	CTile(CResources* resources, const int x, const int y);
 	CTile(CResources* resources, const int x, const int y, const int index);
 
 	void DrawDebug(SDL_Renderer* pass_renderer);
+	void SetSolid(b2World* world);
 
 	~CTile(void){delete debug;};
 private:
@@ -141,15 +141,6 @@ public:
 
 
 	~CCrate(){};
-};
-
-class CFloor : public CEntity
-{
-public:
-	CFloor(CResources* resources, b2World* world, int x, int y, int w, int h);
-
-
-	~CFloor(){};
 };
 
 class CEnemy : public CEntity

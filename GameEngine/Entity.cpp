@@ -48,9 +48,9 @@ CEntity::CEntity(const int x, const int y, const int w, const int h)
 CEntity::~CEntity(void)
 {
 	delete position;
-	delete sprite;
-	delete animate;
-	delete physics;
+	DELETE_Sprite();
+	DELETE_Physics();
+	DELETE_Animation();
 }
 
 void CEntity::ADD_Sprite(CSprite* csprite)
@@ -99,20 +99,29 @@ void CEntity::ADD_Physics(CPhysics* cphysics, bool flag)
 
 void CEntity::DELETE_Animation()
 {
-	delete animate;
-	animate = NULL;
+	if (animate != NULL)
+	{
+		delete animate;
+		animate = NULL;
+	}
 }
 
 void CEntity::DELETE_Sprite()
 {
-	delete sprite;
-	sprite = NULL;
+	if (sprite != NULL)
+	{
+		delete sprite;
+		sprite = NULL;
+	}
 }
 
 void CEntity::DELETE_Physics()
 {
-	delete physics;
-	physics = NULL;
+	if (physics != NULL)
+	{
+		delete physics;
+		physics = NULL;
+	}
 }
 
 bool CEntity::CollidesWith(CEntity* entity)

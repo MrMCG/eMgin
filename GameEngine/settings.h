@@ -5,7 +5,7 @@ namespace settings
 {
 	const int SCREEN_WIDTH = 1280;
 	const int SCREEN_HEIGHT = 720;
-	const Uint32 INPUT_DELAY = 23; // Msec
+	const Uint32 INPUT_DELAY = 5; // Msec
 	// set to ratio of screen resolution
 	const int TILE_COLUMN = 32;
 	const int TILE_ROW = 18;

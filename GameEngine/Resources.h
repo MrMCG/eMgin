@@ -1,17 +1,99 @@
 #pragma once
-#include "IMG_Files.h"
-#include "SND_Files.h"
+#include "stdafx.h"
+
+// This is a singleton file system for images (textures)
+// Files are loaded in here and are refrenced to by other objects
+
+struct MSCFile
+{
+	Mix_Music* file;
+	int index;
+	string path;
+};
+
+struct SNDFile
+{
+	Mix_Chunk* file;
+	int index;
+	string path;
+};
+
+struct IMGFile
+{
+	SDL_Texture* file;
+	int index;
+	string path;
+};
+
+class CIMG_Files
+{
+public:
+	CIMG_Files(SDL_Renderer* pass_renderer);
+	~CIMG_Files(void);
+
+	bool Add(SDL_Renderer* pass_renderer, string file_path);
+	bool Add(SDL_Renderer* pass_renderer, SDL_Texture* tex, string name);
+	bool INIT_TEX(SDL_Renderer* pass_renderer);
+
+	SDL_Texture* GetTEX(string file_name) const;
+	SDL_Texture* GetTEX(int index) const;
+
+private:
+	vector<IMGFile>* textures;
+};
+
+class CSND_Files
+{
+public:
+	CSND_Files();
+	~CSND_Files(void);
+
+	bool Add(string file_path);
+	bool INIT_SND();
+
+	Mix_Chunk* GetSND(string file_name) const;
+	Mix_Chunk* GetSND(int index) const;
+
+	void SetVolume(int index, int vol);
+	void SetVolume(string file_name, int vol);
+
+private: 
+	vector<SNDFile>* sounds;
+};
+
+class CMSC_Files
+{
+public:
+	CMSC_Files();
+	~CMSC_Files(void);
+
+	bool Add(string file_path);
+	bool INIT_MSC();
+
+	Mix_Music* GetMSC(string file_name) const;
+	Mix_Music* GetMSC(int index) const;
+
+	inline void SetVolume(int vol) {Mix_VolumeMusic(vol);};
+
+private: 
+	vector<MSCFile>* music;
+};
 
 class CResources
 {
 public:
-	CResources();
 	CResources(SDL_Renderer* renderer);
 	~CResources(void);
 
-	SDL_Texture* GetTexResources(int index) const {return TEX_resources->GetTEX(index);};
-	Mix_Chunk* GetSoundResources(int index) const {return SND_resources->GetSND(index);};
-	Mix_Music* GetMusicResources(int index) const {return MSC_resources->GetMSC(index);};
+
+	inline bool AddTEX(SDL_Renderer* pass_renderer, string file_path) {return TEX_resources->Add(pass_renderer, file_path);};
+	inline bool AddTEX(SDL_Renderer* pass_renderer, SDL_Texture* tex, string name) {return TEX_resources->Add(pass_renderer, tex, name);};
+	inline bool AddMSC(string file_path) {return MSC_resources->Add(file_path);};
+	inline bool AddSND(string file_path) {return SND_resources->Add(file_path);};
+
+	SDL_Texture* GetTex(int index) const {return TEX_resources->GetTEX(index);};
+	Mix_Chunk* GetSound(int index) const {return SND_resources->GetSND(index);};
+	Mix_Music* GetMusic(int index) const {return MSC_resources->GetMSC(index);};
 	CIMG_Files* GetTexResources() const {return TEX_resources;};
 	CSND_Files* GetSoundResources() const {return SND_resources;};
 	CMSC_Files* GetMusicResources() const {return MSC_resources;};
@@ -30,4 +112,6 @@ private:
 	CSND_Files* SND_resources;
 	CMSC_Files* MSC_resources;
 };
+
+
 

@@ -2,7 +2,6 @@
 #include "stdafx.h"
 #include "Sprite.h"
 #include "Animate.h"
-#include "Text.h"
 #include "Vector2D.h"
 #include "Physics.h"
 
