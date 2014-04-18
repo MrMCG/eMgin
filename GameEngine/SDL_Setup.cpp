@@ -37,6 +37,7 @@ CSDL_Setup::CSDL_Setup()
 
 	mainEvent = new SDL_Event();
 
+
 	if (TTF_Init() == -1)
 	{
 		printf("ERROR: SDL_Setup TTF - %s\n", TTF_GetError());
@@ -192,7 +193,7 @@ void CSDL_Setup::Begin()
 {
 	SDL_RenderClear(renderer);
 	SDL_PollEvent(mainEvent);
-
+	
 }
 
 void CSDL_Setup::End()
