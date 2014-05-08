@@ -5,10 +5,10 @@
 #include "Vector2D.h"
 #include "Physics.h"
 
-
-// Every "object" in the game is an entity
-// The entity has components which define the Entity in the game
-// Each component has its own attributes
+/* Every "object" in the game is an entity
+* The entity has components which define the Entity in the game
+* Each component has its own attributes
+*/
 
 class CEntity
 {
@@ -33,26 +33,26 @@ public:
 
 	// Draw Entity
 	void Draw(SDL_Renderer* pass_renderer);
-	bool SolveCollisions(CEntity* e[]);
 
 	//   -----  NOTE  -----
 	// this is quite inefficinet
 	// event listner should be used
 	// listener can be found in Physics.h
 	bool CollidesWith(CEntity* entity);
-	void SetRectFromPos();
+
+	void SetRectFromPos(); // update SDL rectangle from world position
 		
 	inline void SetPosToCentre()
 		{position->setX((float)(rect.x + (rect.x + rect.w))/2);
 		 position->setY((float)(rect.y + (rect.y + rect.h))/2);};
 
-	void UpdatePosition();
-	void UpdateImageSize(float scale=1);
-	void UpdateImageSize(float scaleX, float scaleY);
+	void UpdatePosition(); // update position/rotation from physics info
+	void UpdateImageSize(float scale=1); // updates image size to physics size * scale
+	void UpdateImageSize(float scaleX, float scaleY); // update image size to physics * custom scale
 
-	void* GetPhysicsData() const;
+	void* GetPhysicsData() const; // fast access to physics userdata
 
-	inline void SetDebug(bool set) {debug = set;};
+	inline void SetDebug(bool set) {debug = set;}; // enable/disable debug
 
 	// Setters
 	inline void SetX(int num){position->setX((float)num);};

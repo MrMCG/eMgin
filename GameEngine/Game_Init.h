@@ -4,7 +4,9 @@
 #include "Resources.h"
 #include "Input.h"
 
-const int LEVELS = 3;
+/* Init game engine, resources and levels */
+
+const int LEVELS = 3; // number of levels
 
 class CGame_Init
 {
@@ -14,13 +16,11 @@ public:
 
 	void Run();
 
-	int screenWidth;
-
 private:
-	CSDL_Setup* csdl_setup;
-	CLevel* game;
-	CResources* resources;
-	CInput* input;
-	string levels[LEVELS];
+	CSDL_Setup* csdl_setup; // SDL init
+	CLevel* game; // loaded level
+	CResources* resources; // stored resources
+	CInput* input; // input used
+	string levels[LEVELS]; // name of levels
 };
 

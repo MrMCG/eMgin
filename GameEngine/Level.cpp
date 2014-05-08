@@ -135,24 +135,29 @@ CLevel::CLevel(CSDL_Setup* csdl_setup, CResources* passedResources, CInput* pass
 	timePrevious = 1;
 	inputTime = 0;
 
-	DEBUG = false;	
-	quit = false;
-	playerWon = false;
-	next = false;
+	DEBUG = false;	// is debug enabled
+	quit = false; // has player restarted level
+	playerWon = false; // has the player won
+	next = false; // able to proceed to next level
 
 	// ------------------------- Create collisions -------------------------
 	// ------------------------- Order is important! -----------------------
+	// enemies and bullets
 	for (vector<CEnemy*>::iterator it = enemies->begin(); it < enemies->end(); it++)
 	{
 		colDet.push_back( colList->ADD_Collision(bullet->GetPhysicsData(), (*it)->GetPhysicsData()) );
 		contacts[BULLET_ENEMIES]++;
 	}
+
+	// bullets and crates
 	contacts[BULLET_CRATES] = contacts[BULLET_ENEMIES];
 	for (vector<CCrate*>::iterator it = crates->begin(); it < crates->end(); it++)
 	{
 		colDet.push_back( colList->ADD_Collision(bullet->GetPhysicsData(), (*it)->GetPhysicsData()) );
 		contacts[BULLET_CRATES]++;
 	}
+
+	// player and crates
 	contacts[PLAYER_CRATES] = contacts[BULLET_CRATES];
 	for (vector<CCrate*>::iterator it = crates->begin(); it < crates->end(); it++)
 	{
@@ -200,6 +205,7 @@ CLevel::~CLevel(void)
 	delete bulletStatus;
 	delete restart;
 	delete instruction;
+	delete scores;
 
 	delete colList;
 }
@@ -234,7 +240,7 @@ void CLevel::HandleEvents()
 
 	if(window->ResetScreen())
 	{
-		quit = true;	
+		quit = true; // if the screen is resized, uppdate rendereer and window	
 	}
 
 	if (inputTime+INPUT_DELAY < timeCurrent)
@@ -265,9 +271,9 @@ void CLevel::HandleEvents()
 			if(input->GetKey(2)->IsEnabled()) // walk left - a
 			{	
 				player->MoveLeft(2000);		
-				player->GetAnimation()->PerformAnimation(1);
+				player->GetAnimation()->PerformAnimation(1); //activate lights
 			
-				resources->PlaySound(3,0,1);
+				resources->PlaySound(3,0,1); // play rocket sound
 			
 				player->SetIdle(false);
 			}
@@ -275,27 +281,27 @@ void CLevel::HandleEvents()
 			if(input->GetKey(3)->IsEnabled()) // walk right - d
 			{
 				player->MoveRight(2000);
-				player->GetAnimation()->PerformAnimation(1);
+				player->GetAnimation()->PerformAnimation(1); //activate lights
 
-				resources->PlaySound(3,0,1);
+				resources->PlaySound(3,0,1); // play rocket sound
 				
 				player->SetIdle(false);
 			}
 
 			if(input->GetKey(8)->IsEnabled()) // fire - space
 			{
-				if (!bullet->IsActive() && bullet->Fire(world, player))
+				if (!bullet->IsActive() && bullet->Fire(world, player)) // if able to fire bullet, fire bullet
 				{
-					resources->PlaySound(2,0);
+					resources->PlaySound(2,0); // play bullet sound
 				}
 			}
 
 			if (player->GetIdle()) // display idle animation
 			{
-				player->GetAnimation()->PerformAnimation(0);		
+				player->GetAnimation()->PerformAnimation(0); // idle player animation		
 			} 
 
-			player->SetIdle(true);
+			player->SetIdle(true); // reset idle stance
 
 			// ------------------------- determine if player has won -------------------------
 			playerWon = true;
@@ -310,8 +316,7 @@ void CLevel::HandleEvents()
 
 			if (playerWon)
 			{
-				// load scores
-				// load map
+				// determine score
 				ifstream file;
 				file.open(location+"_scores.txt");
 				size_t pos = 0;
@@ -351,9 +356,9 @@ void CLevel::HandleEvents()
 				bulletStatus->Print(window->GetRenderer(), "ARMED");
 			}
 
-			timer->Print(window->GetRenderer(), time/10);
+			timer->Print(window->GetRenderer(), time/10); // print updated score
 
-			if (playerWon) // handle player win
+			if (playerWon) // handle player win end title
 			{
 				restart->SetColor(0,255,0);
 				restart->Print(window->GetRenderer(), "YOU WON!");

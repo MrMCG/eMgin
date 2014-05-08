@@ -3,7 +3,7 @@
 
 using namespace settings;
 
-namespace settings
+namespace settings // determined from file
 {
 	int SCREEN_WIDTH;
 	int SCREEN_HEIGHT;

@@ -11,7 +11,7 @@ CAnimate::CAnimate(SDL_Renderer* pass_renderer, CResources* resources, int index
 	}
 
 	// uses error tex
-	// dont animatte
+	// dont animatte if wanted texture is null
 	if (this->tex == resources->GetTex(0))
 	{
 		error = true;
@@ -20,7 +20,7 @@ CAnimate::CAnimate(SDL_Renderer* pass_renderer, CResources* resources, int index
 		error = false;
 	}
 
-	SDL_QueryTexture(tex, NULL, NULL, &texWidth, &texHeight);
+	SDL_QueryTexture(tex, NULL, NULL, &texWidth, &texHeight); // get texture size
 
 	// initialising values
 	crop.x = 0;

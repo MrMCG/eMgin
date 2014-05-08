@@ -31,6 +31,7 @@ protected:
 	bool del;
 };
 
+// hold custom re-writeable texture
 class CText : public CSprite
 {
 public:

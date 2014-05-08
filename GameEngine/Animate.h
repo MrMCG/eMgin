@@ -2,6 +2,8 @@
 #include "StdAfx.h"
 #include "Resources.h"
 
+/* handles sprite sheet animations */
+
 class CAnimate
 {
 public:
@@ -19,7 +21,7 @@ public:
 	// display only one frame from the sprite sheet
 	// coor use top left of square
 	void UseFrame(int column, int row);
-	void UpdateDelay();
+	
 
 	// set sprite sheet size
 	inline void SetSpriteSheet(int columns, int rows) {columnSize=columns;rowSize=rows;};
@@ -27,7 +29,7 @@ public:
 	// set animation speed
 	inline void SetSpeed(int cSpeed) {speed=cSpeed;};
 
-	// set frame reset
+	// set frame reset (start anim from frame 0 on new animation)
 	inline void SetReset(bool flag) {resetFrame=flag;};
 
 	SDL_Texture* GetTEX() const;
@@ -36,6 +38,8 @@ public:
 	int GetFrame() const;
 
 private:
+	void UpdateDelay();
+
 	SDL_Texture* tex;
 	SDL_Rect crop;
 	int texWidth;

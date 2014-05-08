@@ -1,6 +1,6 @@
 #include "Game_Init.h"
 
-int testingVar;
+/* Starts system */
 
 int main(int argc, char *argv[]) 
 {

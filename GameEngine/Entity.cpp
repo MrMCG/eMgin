@@ -218,20 +218,6 @@ void* CEntity::GetPhysicsData() const
 	} 
 }
 
-bool CEntity::SolveCollisions(CEntity* e[])
-{
-	int size = sizeof(e) / sizeof(e[0]);
-	for (int i = 0; i < size; i++)
-	{
-		for (int j = i+1; j < size; j++)
-		{
-			
-		}
-	}
-	
-	return false;
-}
-
 void CEntity::Draw(SDL_Renderer* pass_renderer)
 {
 	if (draw)

@@ -2,6 +2,9 @@
 #include "StdAfx.h"
 #include "Entity.h"
 
+/* Characters are user created entities
+* that are used in-game */
+
 class CPlayer : public CEntity
 {
 public:

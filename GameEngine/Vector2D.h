@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+/* used for entity position */
+
 class Vector2D
 {
 public:

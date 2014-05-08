@@ -1,5 +1,4 @@
 #pragma once
-//#include "StdAfx.h"
 #include "SDL_Setup.h"
 #include "Sprite.h"
 #include "Animate.h"

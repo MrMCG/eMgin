@@ -1,6 +1,7 @@
 #pragma once
 #include "StdAfx.h"
 
+/* basic Key states */ 
 class CInput_Event
 {
 protected:
@@ -25,6 +26,7 @@ public:
 	
 };
 
+/* use SDL keys */
 class CKeyboard_Event : public CInput_Event
 {
 protected:
@@ -37,6 +39,7 @@ public:
 	SDL_Keycode GetKey() const {return KEY;};
 };
 
+// key structure stored in CInput
 struct KEYPress
 {
 	CInput_Event* key;
@@ -44,6 +47,8 @@ struct KEYPress
 	string name;
 };
 
+/* input class stores all created keys and updates their state
+* based on poll calls */
 class CInput
 {
 public:
@@ -63,6 +68,7 @@ public:
 private:
 	vector<KEYPress>* keys;
 
+	// mouse info
 	int mouseX;
 	int mouseY;
 	bool mouseClick;

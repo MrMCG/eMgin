@@ -2,31 +2,33 @@
 #include "StdAfx.h"
 #include "Sprite.h"
 
+// physics system based on box2d
 // Box2D works in the opposite y axis to SDL
 // meaning all y values MUST flip signs if conversion to pixels
 // is to be correct. 
-
 // ^ CAUSE OF MANY ERRORS!
 
+// collision listner that can be used within box2d world
+// ONLY 1 listner per world so listner is dynamic
 class CCollisionListener : public b2ContactListener
 {
 public:
 	CCollisionListener() {};
 	~CCollisionListener() {bodyA.clear();bodyB.clear();collision.clear();};
 	
-	int ADD_Collision(void* body1);
-	int ADD_Collision(void* body1, void* body2);
+	int ADD_Collision(void* body1); // collision of body with anything
+	int ADD_Collision(void* body1, void* body2); // collision of 2 bodies
 
-	void BeginContact(b2Contact* contact);
-	void EndContact(b2Contact* contact);
+	void BeginContact(b2Contact* contact); // start contact
+	void EndContact(b2Contact* contact); // end contact
 
-	inline bool HasCollided(int index) const {return collision[index];};
+	inline bool HasCollided(int index) const {return collision[index];}; // determine if certain body/bodies have collided
 
 private:
 	vector<void*> bodyA;
 	vector<void*> bodyB;
 
-	vector<int> collision;
+	vector<int> collision; // use int as body can have multiple collisions
 };
 
 class CPhysics
@@ -72,6 +74,7 @@ private:
 	int colNum;
 };
 
+// gets info on a raycast
 class RaysCastCallback : public b2RayCastCallback
 {
 public:
@@ -90,6 +93,5 @@ public:
     b2Vec2 m_point;    
     b2Vec2 m_normal;    
     float32 m_fraction;
- 
 };
 

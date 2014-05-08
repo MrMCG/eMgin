@@ -1,8 +1,8 @@
 #pragma once
 #include "stdafx.h"
 
-// This is a singleton file system for images (textures)
-// Files are loaded in here and are refrenced to by other objects
+/* resources follow singleton pattern
+* loaded once into memory and refrenced in game */
 
 struct MSCFile
 {
@@ -25,6 +25,7 @@ struct IMGFile
 	string path;
 };
 
+// image/texture storage
 class CIMG_Files
 {
 public:
@@ -42,6 +43,7 @@ private:
 	vector<IMGFile>* textures;
 };
 
+// sound files
 class CSND_Files
 {
 public:
@@ -61,6 +63,7 @@ private:
 	vector<SNDFile>* sounds;
 };
 
+// music files
 class CMSC_Files
 {
 public:
@@ -79,6 +82,7 @@ private:
 	vector<MSCFile>* music;
 };
 
+// group all resources together
 class CResources
 {
 public:

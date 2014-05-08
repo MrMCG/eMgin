@@ -3,6 +3,7 @@
 
 using namespace settings;
 
+// Textures used
 const int TEX_PLAYER = 1;
 const int TEX_BACKGROUND = 2;
 const int TEX_BULLET = 3;
@@ -294,7 +295,7 @@ CTile::CTile(CResources* resources, const int x, const int y, const int index) :
 void CTile::SetSolid(b2World* world)
 {
 	ADD_Physics(new CPhysics(world, rect.x/TILE_PIXEL_METER, -rect.y/TILE_PIXEL_METER, TILE_SCALE, TILE_SCALE, false));
-	physics->GetBody()->GetFixtureList()->SetFriction(3);
+	physics->GetBody()->GetFixtureList()->SetFriction(2); // slow player down on contact with floor
 }
 
 void CTile::DrawDebug(SDL_Renderer* pass_renderer)

@@ -42,6 +42,7 @@ CGame_Init::CGame_Init(void)
 	input->Add(new CKeyboard_Event(SDLK_SPACE)); // 8
 	input->Add(new CKeyboard_Event(SDLK_e), "e"); // 9
 
+	// set level names/directories
 	levels[0] = "level1/";
 	levels[1] = "level2/";
 	levels[2] = "level3/";
@@ -56,18 +57,19 @@ CGame_Init::~CGame_Init(void)
 
 void CGame_Init::Run()
 {
-	resources->PlayMusic(1, -1);
+	resources->PlayMusic(1, -1); // start music
 	int currentLevel = 0;
 	while (csdl_setup->GetMainEvent()->type != SDL_QUIT)
 	{
+		// load new game
 		game = new CLevel(csdl_setup, resources, input, levels[currentLevel]);
 
-		if (game->GameLoop())
+		if (game->GameLoop()) // if player wins and continues
 		{
-			currentLevel++;
-			currentLevel %= LEVELS;
+			currentLevel++; // move to next level
+			currentLevel %= LEVELS; // loop through levels
 		}
 
-		delete game;
+		delete game; // delete previous game
 	}
 }
